@@ -21,8 +21,6 @@ file_type = "archive"
 prompt = "karel capek"
 file_type = "audio"
 
-
-
 OUTPUT = {}
 
 CONFIG = """
@@ -80,7 +78,7 @@ if __name__ == "__main__":
                 ),
                 "",
                 ["Submit", lambda *_: submit(manager, window)],
-                width=60,
+                width=80,
                 box="DOUBLE",
             )
             .set_title("[210 bold]New contact")

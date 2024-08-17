@@ -10,3 +10,4 @@ pip install -r .\requirements.txt
 
 > [!warning]
 > PTG nefunguje pod OS Windows.
+
