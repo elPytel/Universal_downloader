@@ -1,6 +1,7 @@
 
 import bs4
 from link_to_file import *
+from colors import *
 
 def remove_style(soup):
     """
@@ -72,18 +73,32 @@ def get_atributes_from_file_page(soup):
         raise ValueError("ERROR: unable to parse atributes." + str(e))
     return link_2_file
 
+def remove_empty_lines(text):
+    return "\n".join([line for line in text.split("\n") if line.strip() != ""])
+
+def any_text_coresponds_to(text, texts):
+    return any([t in text for t in texts])
+
 def is_valid_download_page(page):
     """
     Stránka neplatná, pokud obsahuje: 
     <h1 class="red">Stahuj a nahrávej soubory neomezenou rychlostí</h1>
+    "Tento soubor byl smazán."
     """
     soup = bs4.BeautifulSoup(page.text, "html.parser")
     invalid_texts = (
         "Stahuj a nahrávej soubory neomezenou rychlostí", 
-        "Chyba 404 Nenalezeno"
+        "Chyba 404 Nenalezeno",
+        "Tento soubor byl smazán."
     )
     page_title = soup.find("h1", class_="red")
     if page_title is not None and page_title.text in invalid_texts:
+        return False
+    
+    soup = remove_style(soup)
+    page_txt = soup.find("div", class_="content")
+    text = remove_empty_lines(page_txt.text)
+    if page_txt is not None and any_text_coresponds_to(text, invalid_texts):
         return False
     return True
 
@@ -106,11 +121,12 @@ def parse_catalogue(page):
     for videobox in content.find_all(class_="videobox-desc"):
         try:
             catalogue_file = get_atributes_from_catalogue(videobox)
-            print(catalogue_file)
+            print("")
+            print(catalogue_file.colorize())
             download_page_content = parse_file_page(download_page(catalogue_file.link))
             link_2_file = get_atributes_from_file_page(download_page_content)
             link_2_files.append(link_2_file)
         except ValueError as e:
-            print(e, "for file:", catalogue_file.title)
+            print_error(str(e) + " for file: " + catalogue_file.title, False)
     return link_2_files
 

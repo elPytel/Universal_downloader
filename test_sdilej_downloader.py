@@ -55,5 +55,6 @@ def test_search(prompt, file_type, url):
     ("https://toplinktracker.com/?x=af4baeedcfed92686a83bf1bxdrcdd709648e7d21b782tyiibhhehd8d20f43f7d764d7e032ba2f18&y=cf7643e4e82d5a9865ea5fb3db4940cba29efd08d6698bf4", False)
 ])
 def test_is_valid_download_page(url, validity):
-    assert is_valid_download_page(
-        download_page(url)) == validity
+    page = download_page(url)
+    print("Status code:", page.status_code)
+    assert is_valid_download_page(page) == validity
