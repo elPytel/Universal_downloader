@@ -2,6 +2,7 @@
 import os
 import json
 from download import *
+from colors import *
 
 DEBUG = True
 VERBOSE = True
@@ -31,6 +32,9 @@ class Link_to_file:
         if VERBOSE:
             print(f"File {self.title} was downloaded.")
     
+    def server_name(self):
+        return self.link.split("/")[2]
+    
     def to_json(self):
         return json.dumps(self.__dict__)
     
@@ -38,6 +42,13 @@ class Link_to_file:
         link_2_file = Link_to_file("", "", "")
         link_2_file.__dict__ = json.loads(json_str)
         return link_2_file
+    
+    def colorize(self):
+        return f"Title: {Blue}{self.title}{NC} \nLink: {Blue}{self.link}{NC} \nSize: {Blue}{self.size}{NC}"
 
     def __str__(self):
-        return f"Title: {self.title} \nLink: {self.link} \nSize: {self.size}\n"
+        return f"Title: {self.title} \nLink: {self.link} \nSize: {self.size}"
+    
+    def __eq__(self, other):
+        return self.title == other.title and self.link == other.link and self.size == other.size
+    
