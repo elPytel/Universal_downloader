@@ -7,3 +7,6 @@ ZÃ¡vislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci pouÅ
 ```bash
 pip install -r .\requirements.txt
 ```
+
+> [!warning]
+> PTG nefunguje pod OS Windows.
