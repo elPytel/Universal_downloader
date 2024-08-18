@@ -121,8 +121,9 @@ def parse_catalogue(page):
     for videobox in content.find_all(class_="videobox-desc"):
         try:
             catalogue_file = get_atributes_from_catalogue(videobox)
-            print("")
-            print(catalogue_file.colorize())
+            if DEBUG:
+                print("")
+                print(catalogue_file.colorize())
             download_page_content = parse_file_page(download_page(catalogue_file.link))
             link_2_file = get_atributes_from_file_page(download_page_content)
             link_2_files.append(link_2_file)

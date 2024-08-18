@@ -6,6 +6,7 @@ from colors import *
 
 DEBUG = True
 VERBOSE = True
+JSON_FILE = "files.json"
 
 class Link_to_file:
     def __init__(self, title, link, size):
@@ -52,3 +53,24 @@ class Link_to_file:
     def __eq__(self, other):
         return self.title == other.title and self.link == other.link and self.size == other.size
     
+def load_links_from_file(file_path = JSON_FILE):
+    """ 
+    load files from json
+    """ 
+    link_2_files = []
+    link_2_file = Link_to_file("", "", "")
+    with open(JSON_FILE, "r") as file:
+        for line in file:
+            if line == "":
+                continue
+            link_2_file = link_2_file.from_json(line)
+            link_2_files.append(link_2_file)
+    return link_2_files 
+
+def save_links_to_file(link_2_files, file_path = JSON_FILE):
+    """
+    save files to json
+    """
+    with open(file_path, "w", encoding=ENCODING) as file:
+        for link_2_file in link_2_files:
+            file.write(link_2_file.to_json() + "\n")
