@@ -4,11 +4,13 @@ Zdroje:
 - https://sdilej.cz
 """
 
-from tui import *
+import os
+import argparse 
+from time import sleep
+from tui import main
 from pytermgui.pretty import pprint
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
-import argparse 
 
 JSON_FILE = "files.json"
 DEBUG = True
@@ -64,17 +66,42 @@ if __name__ == "__main__":
                 
         link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
         
-        print_info("Number of files:", len(link_2_files))
+        print_info(f"Number of files: {len(link_2_files)}")
+
+        # test if file exists
+        """
+        if not os.path.exists(JSON_FILE):
+            print_info(f"File {JSON_FILE} does not exist.")
+            # create file
+            os.mknod(JSON_FILE)
+        """
         save_links_to_file(link_2_files, JSON_FILE, append=False)
         
     if args.download:
         link_2_files = load_links_from_file(JSON_FILE)
-        for link in link_2_files:
+        for link_2_file in link_2_files:
             # test if file exists
-            if os.path.exists(f"{download_folder}/{link.title}"):
-                print_info(f"File {link.title} already exists.")
+            if os.path.exists(f"{download_folder}/{link_2_file.title}"):
+                print_info(f"File {link_2_file.title} already exists.")
                 continue
             
             # download file
-            link.download(download_folder)
-            print_success(f"Downloaded: {link.title}")
+            if VERBOSE:
+                print_info(f"Downloading file: {link_2_file.title} of size {link_2_file.size}...")
+            link_2_file.download(download_folder)
+            
+            # test file size > 1kb
+            file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+            if file_size < 1024:
+                print_warning(f"File {link_2_file.title} was not downloaded correctly.")
+                os.remove(f"{download_folder}/{link_2_file.title}")
+                print_info(f"File {link_2_file.title} was removed.")
+            else:
+                if VERBOSE:
+                    print_success(f"File {link_2_file.title} of size {file_size} was downloaded.")
+            
+            # wait
+            sleep_time = 60
+            print_info(f"Wating {sleep_time}s...")
+            sleep(sleep_time)
+            

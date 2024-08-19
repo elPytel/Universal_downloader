@@ -4,10 +4,6 @@ from link_to_file import *
 
 LINKS = []
 
-
-LINKS = load_links_from_file()
-
-
 def drop_down(
     manager: ptg.WindowManager, button: ptg.Button, title: str, options: list
 ):
@@ -193,8 +189,10 @@ def update_selected_links(window):
 
 # Hlavní funkce
 def main():
-    with ptg.WindowManager() as manager:
+    
+    LINKS = load_links_from_file()
 
+    with ptg.WindowManager() as manager:
         main_menu = ptg.Window(
             ptg.Splitter(
                 ptg.Button("Search", lambda *_: search(manager)),

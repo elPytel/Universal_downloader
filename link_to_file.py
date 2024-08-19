@@ -24,14 +24,8 @@ class Link_to_file:
         if os.path.exists(file_path):
             raise ValueError(f"File {self.title} already exists.")
 
-        if VERBOSE:
-            print(f"Downloading file: {self.title}")
-
         response = download_page(self.link)
         save_binary_file(response, file_path)
-
-        if VERBOSE:
-            print(f"File {self.title} was downloaded.")
 
     def server_name(self):
         return self.link.split("/")[2]
