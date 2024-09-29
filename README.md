@@ -45,7 +45,7 @@ Vyhledané soubory se uloží do souboru `files.json`.
 
 ### Stažení souborů
 ```bash
-main.py --search "název souboru" --download
+main.py --download
 ```
 Tento příkaz projde obsah souboru `files.json` a stáhne všechny soubory, které jsou v něm uvedeny.
 

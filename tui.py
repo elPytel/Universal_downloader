@@ -9,7 +9,6 @@ def drop_down(
 ):
     """
     render a drop down menu
-    return the selected option
     """
 
     def select_option(option):
@@ -68,7 +67,7 @@ def search(manager: ptg.WindowManager):
         LINKS = load_links_from_file()
         update_selected_links(selected)
 
-    search_button = ptg.Button(
+    search_button = ptg.KeyboardButton(
         "Search",
         lambda *_: search_files_and_close(
             search_field.value, file_type_button.label, search_type_button.label
@@ -195,12 +194,12 @@ def main():
     with ptg.WindowManager() as manager:
         main_menu = ptg.Window(
             ptg.Splitter(
-                ptg.Button("Search", lambda *_: search(manager)),
+                ptg.KeyboardButton("Search", lambda *_: search(manager)),
                 ptg.Button("Show Selected", lambda *_: show_selected(manager)),
-                ptg.Button(
-                    "Start Downloads", lambda *_: start_downloads(manager, console_text)
+                ptg.KeyboardButton(
+                    "Download selected", lambda *_: start_downloads(manager, console_text)
                 ),
-                ptg.Button("Exit", lambda *_: manager.stop()),
+                ptg.KeyboardButton("Quit", lambda *_: manager.stop()),
             ),
             box="SINGLE",
             static_height=3,

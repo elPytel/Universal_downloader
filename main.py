@@ -13,24 +13,20 @@ from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
 
 JSON_FILE = "files.json"
-DEBUG = True
+DEBUG = False
 VERBOSE = True
 
 download_folder = "download"
 
-prompt = "zemeplocha"
-file_type = "archive"
-
 prompt = "karel capek"
 file_type = "audio"
-
 
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description="Download files from internet.")
     parser.add_argument("-s", "--search", type=str, help="Search for files.")
     parser.add_argument("-t", "--file-type", type=str, choices=Sdilej_downloader().file_types.keys(), help="Type of files to search for.")
-    parser.add_argument("-T", "--search-type", type=str, choices=Sdilej_downloader().search_types.keys(),help="Search format.")
+    parser.add_argument("-T", "--search-type", type=str, choices=Sdilej_downloader().search_types.keys(), help="Search format.")
     parser.add_argument("-d", "--download", action="store_true", help="Download the found files.")
     parser.add_argument("-f", "--file", type=str, help="File to download.")
     parser.add_argument("-F", "--folder", type=str, help="Folder to download to.")
@@ -67,15 +63,7 @@ if __name__ == "__main__":
         link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
         
         print_info(f"Number of files: {len(link_2_files)}")
-
-        # test if file exists
-        """
-        if not os.path.exists(JSON_FILE):
-            print_info(f"File {JSON_FILE} does not exist.")
-            # create file
-            os.mknod(JSON_FILE)
-        """
-        save_links_to_file(link_2_files, JSON_FILE, append=False)
+        save_links_to_file(link_2_files, JSON_FILE, append=True)
         
     if args.download:
         link_2_files = load_links_from_file(JSON_FILE)
@@ -87,21 +75,21 @@ if __name__ == "__main__":
             
             # download file
             if VERBOSE:
-                print_info(f"Downloading file: {link_2_file.title} of size {link_2_file.size}...")
+                print_info(f"Downloading file: {Blue}{link_2_file.title}{NC} of size {Blue}{link_2_file.size}{NC}...")
             link_2_file.download(download_folder)
             
             # test file size > 1kb
             file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
             if file_size < 1024:
-                print_warning(f"File {link_2_file.title} was not downloaded correctly.")
+                print_warning(f"File {Blue}{link_2_file.title}{NC} was not downloaded correctly.")
                 os.remove(f"{download_folder}/{link_2_file.title}")
-                print_info(f"File {link_2_file.title} was removed.")
+                print_info(f"File {Blue}{link_2_file.title}{NC} was removed.")
             else:
                 if VERBOSE:
-                    print_success(f"File {link_2_file.title} of size {file_size} was downloaded.")
+                    print_success(f"File {Blue}{link_2_file.title}{NC} of size {Blue}{file_size}{NC} was downloaded.")
             
             # wait
-            sleep_time = 60
+            sleep_time = 100
             print_info(f"Wating {sleep_time}s...")
             sleep(sleep_time)
             
