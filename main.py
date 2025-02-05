@@ -7,8 +7,6 @@ Zdroje:
 import os
 import argparse 
 from time import sleep
-from tui import main
-from pytermgui.pretty import pprint
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
 
@@ -33,6 +31,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose mode.")
     parser.add_argument("-D", "--debug", action="store_true", help="Debug mode.")
     parser.add_argument("-g", "--tui", action="store_true", help="Start TUI.")
+    parser.add_argument("-G", "--gui", action="store_true", help="Start GUI.")
     args = parser.parse_args()
     
     if args.verbose:
@@ -50,10 +49,18 @@ if __name__ == "__main__":
     if args.file:
         JSON_FILE = args.file
     
+    # start TUI
     if args.tui:
-        main()
+        import tui 
+        tui.main()
         exit(0)
-    
+
+    # start GUI
+    if args.gui:
+        import gui
+        gui.main()
+        exit(0)
+
     # search for files
     if args.search:
         prompt = args.search
