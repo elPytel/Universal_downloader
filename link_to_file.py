@@ -7,6 +7,44 @@ DEBUG = True
 VERBOSE = True
 JSON_FILE = "files.json"
 
+def size_int_2_string(size : int) -> str:
+    """
+    Converts an integer in bytes to a string with a size.
+    """
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.2f} KB"
+    if size < 1024 * 1024 * 1024:
+        return f"{size / 1024 / 1024:.2f} MB"
+    return f"{size / 1024 / 1024 / 1024:.2f} GB"
+
+def size_string_2_bytes(size : str) -> int:
+    """
+    Converts a string with a size to an integer in bytes.
+    """
+    size = size.lower()
+    if size.endswith("kb"):
+        return int(float(size[:-2]) * 1024)
+    if size.endswith("mb"):
+        return int(float(size[:-2]) * 1024 * 1024)
+    if size.endswith("gb"):
+        return int(float(size[:-2]) * 1024 * 1024 * 1024)
+    if size.endswith("b"):
+        return int(float(size[:-1]))
+    return int(float(size))
+
+def compare_sizes(size1 : str, size2 : str, precision=0.1) -> bool:
+    """
+    Compares two sizes of files.
+    precision: 0.1 means that the sizes can differ by 10%.
+    """
+    # pokud je size string, převeď na int
+    if isinstance(size1, str):
+        size1 = size_string_2_bytes(size1)
+    if isinstance(size2, str):
+        size2 = size_string_2_bytes(size2)
+    return size1 * (1 - precision) < size2 < size1 * (1 + precision)
 
 class Link_to_file:
     def __init__(self, title, link, size):
@@ -18,7 +56,7 @@ class Link_to_file:
         """
         Stáhne soubor z internetu a uloží jej do souboru.
         """
-        file_path = f"{download_folder}/{self.title}"
+        file_path = os.path.join(download_folder, self.title)
         if not os.path.exists(download_folder):
             raise ValueError(f"Directory {download_folder} does not exist!")
         if os.path.exists(file_path):

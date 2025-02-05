@@ -87,16 +87,18 @@ if __name__ == "__main__":
             
             # test file size > 1kb
             file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
-            if file_size < 1024:
+            if (not compare_sizes(file_size, link_2_file.size, 20/100) and link_2_file.size != None) or (link_2_file.size == None and file_size < 1024):
                 print_warning(f"File {Blue}{link_2_file.title}{NC} was not downloaded correctly.")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                print_info(f"File {Blue}{link_2_file.title}{NC} was removed.")
+                print_info(f"File size: {Blue}{file_size}{NC} expected: {Blue}{link_2_file.size}{NC}")
+                if not DEBUG:
+                    os.remove(f"{download_folder}/{link_2_file.title}")
+                    print_info(f"File {Blue}{link_2_file.title}{NC} was removed.")
             else:
                 if VERBOSE:
-                    print_success(f"File {Blue}{link_2_file.title}{NC} of size {Blue}{file_size}{NC} was downloaded.")
+                    print_success(f"File {Blue}{link_2_file.title}{NC} of size {Blue}{size_int_2_string(file_size)}{NC} was downloaded.")
             
             # wait
-            sleep_time = 100
+            sleep_time = 10
             print_info(f"Wating {sleep_time}s...")
             sleep(sleep_time)
             

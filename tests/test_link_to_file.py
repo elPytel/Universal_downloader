@@ -1,4 +1,5 @@
 import pytest
+import os
 
 from main import *
 from link_to_file import Link_to_file
@@ -37,3 +38,51 @@ def test_from_json(lines, link_2_files):
 def test_server_name():
     link_2_file = Link_to_file("title", "https://sdilej.cz/free/index.php?id=28238129", "size")
     assert link_2_file.server_name() == "sdilej.cz"
+
+@pytest.mark.parametrize("size, value", [
+    ("2.8 GB", 2.8*1024*1024*1024),
+    ("2.8 MB", 2.8*1024*1024),
+    ("2.8 KB", 2.8*1024),
+    ("2.8 B", 2.8),
+    ("2.8 ", 2.8)
+])
+def test_size_string_2_bytes(size, value):
+    assert size_string_2_bytes(size) == int(value)
+
+@pytest.mark.parametrize("title, link, size", [(
+    "Zaklínač - Bouřková sezóna.epub",
+    "https://sdilej.cz/free/index.php?id=27818824",
+    "2.8 MB"
+)]
+)
+def test_download(title, link, size):
+    link_2_file = Link_to_file(title, link, size)
+    download_folder = "download"
+    
+    # Ensure the download folder exists
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+    
+    file_path = os.path.join(download_folder, title)
+    
+    try:
+        # Download the file
+        link_2_file.download(download_folder)
+        
+        # Check if the file exists
+        assert os.path.exists(file_path)
+
+        # Check if the file is not empty
+        file_size = os.path.getsize(file_path)
+        assert file_size > 0
+
+        print("File size:", file_size)
+        print("Link size:", link_2_file.size)
+        assert compare_sizes(file_size, link_2_file.size, 20/100)
+    finally:
+        # Clean up: remove the downloaded file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Ensure the file is deleted
+        assert not os.path.exists(file_path)

@@ -51,7 +51,7 @@ def test_search(prompt, file_type, url):
 
 
 @pytest.mark.parametrize("url, validity", [
-    ("https://toplinktracker.com/?x=5ef00a5ea7e01f03ef7bee4ggcdnnngdbb0154dd525b79tyiibeebyh2cbadfada495d81f3d7a9b0d2&y=b797ef823c50c33f7a2f8046fe94d9bffa3b07158b5c847c", False),
+    ("https://toplinktracker.com/?x=5ef00a5ea7e01f03ef7bee4ggcdnnngdbb0154dd525b79tyiibeebyh2cbadfada495d81f3d7a9b0d2&y=b797ef823c50c33f7a2f8046fe94d9bffa3b07158b5c847c", True),
     ("https://toplinktracker.com/?x=af4baeedcfed92686a83bf1bxdrcdd709648e7d21b782tyiibhhehd8d20f43f7d764d7e032ba2f18&y=cf7643e4e82d5a9865ea5fb3db4940cba29efd08d6698bf4", False)
 ])
 def test_is_valid_download_page(url, validity):
