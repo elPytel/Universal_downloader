@@ -11,6 +11,7 @@ from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
 
 JSON_FILE = "files.json"
+FAILED_FILES = "failed_files.json"
 DEBUG = False
 VERBOSE = True
 
@@ -32,6 +33,7 @@ if __name__ == "__main__":
     parser.add_argument("-D", "--debug", action="store_true", help="Debug mode.")
     parser.add_argument("-g", "--tui", action="store_true", help="Start TUI.")
     parser.add_argument("-G", "--gui", action="store_true", help="Start GUI.")
+    parser.add_argument("-r", "--remove", action="store_true", help="Remove downloaded files from the list.")
     args = parser.parse_args()
     
     if args.verbose:
@@ -74,10 +76,12 @@ if __name__ == "__main__":
         
     if args.download:
         link_2_files = load_links_from_file(JSON_FILE)
+        successfull_files = []
         for link_2_file in link_2_files:
             # test if file exists
             if os.path.exists(f"{download_folder}/{link_2_file.title}"):
                 print_info(f"File {link_2_file.title} already exists.")
+                successfull_files.append(link_2_file)
                 continue
             
             # download file
@@ -93,12 +97,20 @@ if __name__ == "__main__":
                 if not DEBUG:
                     os.remove(f"{download_folder}/{link_2_file.title}")
                     print_info(f"File {Blue}{link_2_file.title}{NC} was removed.")
+                save_links_to_file([link_2_file], FAILED_FILES, append=True)
             else:
+                successfull_files.append(link_2_file)
                 if VERBOSE:
                     print_success(f"File {Blue}{link_2_file.title}{NC} of size {Blue}{size_int_2_string(file_size)}{NC} was downloaded.")
             
             # wait
-            sleep_time = 10
+            sleep_time = 60
             print_info(f"Wating {sleep_time}s...")
             sleep(sleep_time)
+        
+        if args.remove and len(successfull_files) > 0:
+            if VERBOSE:
+                print_info("Removing downloaded files from the list...")
+            remove_links_from_file(successfull_files, JSON_FILE)
+        
             

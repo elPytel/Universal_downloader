@@ -104,7 +104,6 @@ def load_links_from_file(file_path=JSON_FILE):
             link_2_files.append(link_2_file)
     return link_2_files
 
-
 def save_links_to_file(link_2_files, file_path=JSON_FILE, append=False):
     """
     save files to json
@@ -117,3 +116,14 @@ def save_links_to_file(link_2_files, file_path=JSON_FILE, append=False):
     with open(file_path, mode, encoding=ENCODING) as file:
         for link_2_file in link_2_files:
             file.write(link_2_file.to_json() + "\n")
+
+def remove_links_from_file(links_to_remove_from_file, file_path=JSON_FILE):
+    """
+    remove files from json
+    """
+    old_link_2_files = load_links_from_file(file_path)
+    new_link_2_files = []
+    for link_2_file in old_link_2_files:
+        if link_2_file not in links_to_remove_from_file:
+            new_link_2_files.append(link_2_file)
+    save_links_to_file(new_link_2_files, file_path)
