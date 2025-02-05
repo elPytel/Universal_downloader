@@ -1,4 +1,3 @@
-
 import bs4
 from link_to_file import *
 from basic_colors import *

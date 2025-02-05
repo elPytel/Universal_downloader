@@ -4,3 +4,4 @@ argparse
 requests
 pytermgui
 PyYAML
+basic-colors
