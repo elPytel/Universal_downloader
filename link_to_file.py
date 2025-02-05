@@ -1,7 +1,7 @@
 import os
 import json
 from download import *
-from colors import *
+from basic_colors import *
 
 DEBUG = True
 VERBOSE = True

@@ -1,7 +1,7 @@
 
 import bs4
 from link_to_file import *
-from colors import *
+from basic_colors import *
 
 def remove_style(soup):
     """
