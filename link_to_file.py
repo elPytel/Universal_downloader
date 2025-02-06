@@ -64,6 +64,9 @@ class Link_to_file:
 
         response = download_page(self.link)
         save_binary_file(response, file_path)
+    
+    def download_with_progress(self, download_folder="."):
+        raise NotImplementedError("Not implemented yet.")
 
     def server_name(self):
         return self.link.split("/")[2]
@@ -126,4 +129,12 @@ def remove_links_from_file(links_to_remove_from_file, file_path=JSON_FILE):
     for link_2_file in old_link_2_files:
         if link_2_file not in links_to_remove_from_file:
             new_link_2_files.append(link_2_file)
+    save_links_to_file(new_link_2_files, file_path)
+
+def add_links_to_file(links_to_add_to_file, file_path=JSON_FILE):
+    """
+    add files to json
+    """
+    old_link_2_files = load_links_from_file(file_path)
+    new_link_2_files = list(set(old_link_2_files + links_to_add_to_file))
     save_links_to_file(new_link_2_files, file_path)

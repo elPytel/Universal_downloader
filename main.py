@@ -9,6 +9,9 @@ import argparse
 from time import sleep
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
+import threading
+import queue
+import sys
 
 JSON_FILE = "files.json"
 FAILED_FILES = "failed_files.json"
@@ -19,6 +22,10 @@ download_folder = "download"
 
 prompt = "karel capek"
 file_type = "audio"
+
+def read_input(input_queue):
+    while True:
+        input_queue.put(sys.stdin.read(1))
 
 if __name__ == "__main__":
     # parse arguments
@@ -63,6 +70,11 @@ if __name__ == "__main__":
         gui.main()
         exit(0)
 
+    input_queue = queue.Queue()
+    input_thread = threading.Thread(target=read_input, args=(input_queue,))
+    input_thread.daemon = True
+    input_thread.start()
+
     # search for files
     if args.search:
         prompt = args.search
@@ -72,12 +84,20 @@ if __name__ == "__main__":
         link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
         
         print_info(f"Number of files: {len(link_2_files)}")
-        save_links_to_file(link_2_files, JSON_FILE, append=True)
+        
+        link_2_files_from_file = load_links_from_file(JSON_FILE)
+        link_2_files = list(set(link_2_files + link_2_files_from_file))
+        save_links_to_file(link_2_files, JSON_FILE)
         
     if args.download:
         link_2_files = load_links_from_file(JSON_FILE)
         successfull_files = []
         for link_2_file in link_2_files:
+            # Check for 'q' key press to exit
+            if not input_queue.empty() and input_queue.get() == 'q':
+                print_info("Exiting download loop.")
+                break
+
             # test if file exists
             if os.path.exists(f"{download_folder}/{link_2_file.title}"):
                 print_info(f"File {link_2_file.title} already exists.")
@@ -112,5 +132,3 @@ if __name__ == "__main__":
             if VERBOSE:
                 print_info("Removing downloaded files from the list...")
             remove_links_from_file(successfull_files, JSON_FILE)
-        
-            
