@@ -63,7 +63,7 @@ def search(manager: ptg.WindowManager):
     def search_files_and_close(search_text, file_type, search_type):
         console_print("Searching...")
         window.close()
-        # LINKS = sdilej_downloader.Sdilej_downloader().search(search_text, file_type, search_type)
+        # LINKS = list(sdilej_downloader.Sdilej_downloader().search(search_text, file_type, search_type))
         LINKS = load_links_from_file()
         update_selected_links(selected)
 
