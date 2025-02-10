@@ -96,7 +96,7 @@ if __name__ == "__main__":
         
         """
         link_2_files_from_file = load_links_from_file(JSON_FILE)
-        link_2_files = list(set(link_2_files + link_2_files_from_file))
+        link_2_files = add_links_to_list(link_2_files_from_file, link_2_files)
         save_links_to_file(link_2_files, JSON_FILE)
         """
         #add_links_to_file(link_2_files, JSON_FILE)

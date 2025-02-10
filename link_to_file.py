@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 from download import *
 from basic_colors import *
 
@@ -91,9 +92,12 @@ class Link_to_file:
             and self.link == other.link
             and self.size == other.size
         )
+    
+    def __hash__(self):
+        return hash((self.title, self.link, self.size))
 
 
-def load_links_from_file(file_path=JSON_FILE):
+def load_links_from_file(file_path=JSON_FILE) -> List[Link_to_file]:
     """
     load files from json
     """
@@ -107,7 +111,7 @@ def load_links_from_file(file_path=JSON_FILE):
             link_2_files.append(link_2_file)
     return link_2_files
 
-def save_links_to_file(link_2_files, file_path=JSON_FILE, append=False):
+def save_links_to_file(link_2_files: List[Link_to_file], file_path=JSON_FILE, append=False):
     """
     save files to json
     """
@@ -120,7 +124,7 @@ def save_links_to_file(link_2_files, file_path=JSON_FILE, append=False):
         for link_2_file in link_2_files:
             file.write(link_2_file.to_json() + "\n")
 
-def remove_links_from_file(links_to_remove_from_file, file_path=JSON_FILE):
+def remove_links_from_file(links_to_remove_from_file: List[Link_to_file], file_path=JSON_FILE):
     """
     remove files from json
     """
@@ -131,10 +135,15 @@ def remove_links_from_file(links_to_remove_from_file, file_path=JSON_FILE):
             new_link_2_files.append(link_2_file)
     save_links_to_file(new_link_2_files, file_path)
 
-def add_links_to_file(links_to_add_to_file, file_path=JSON_FILE):
+def add_links_to_list(old_links: List[Link_to_file], new_links: List[Link_to_file]) -> List[Link_to_file]:
+    """
+    add files to list
+    """
+    return list(set(old_links + new_links))
+
+def add_links_to_file(links_to_add_to_file: List[Link_to_file],  file_path=JSON_FILE):
     """
     add files to json
     """
     old_link_2_files = load_links_from_file(file_path)
-    new_link_2_files = list(set(old_link_2_files + links_to_add_to_file))
-    save_links_to_file(new_link_2_files, file_path)
+    save_links_to_file(add_links_to_list(old_link_2_files, links_to_add_to_file), file_path)

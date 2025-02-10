@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 ### Help
 ```bash
-main.py --help
+python3 main.py --help
 usage: main.py [-h] [-s SEARCH] [-t {all,video,audio,archive,images}] [-T {relevance,most_downloaded,newest,biggest,smallest}] [-d] [-f FILE] [-F FOLDER] [-v] [-D] [-g]
 
 Download files from internet.
@@ -36,7 +36,7 @@ options:
 
 ### Vyhledání souborů
 ```bash
-main.py --search "název souboru" --file-type "audio" --search-type "smallest"
+python3 main.py --search "název souboru" --file-type "audio" --search-type "smallest"
 ```
 Vyhledané soubory se uloží do souboru `files.json`. 
 
@@ -45,14 +45,45 @@ Vyhledané soubory se uloží do souboru `files.json`.
 
 ### Stažení souborů
 ```bash
-main.py --download
+python3 main.py --download
 ```
 Tento příkaz projde obsah souboru `files.json` a stáhne všechny soubory, které jsou v něm uvedeny.
+
+## Použití v GUI
+
+```bash
+python3 gui.py
+```
+
+Nebo:
+```bash
+python3 main.py --gui
+```
+
+### Vyhlédání souborů
+
+Do pole `Search` zadejte název souboru, který chcete stáhnout.
+- Vyberte případně **typ** souboru, a **způsob** vyhledání.
+Po stisknutí tlačítka `Search` se zobrazí seznam souborů, které odpovídají zadanému názvu.
+
+### Načtení odzkazů ze souboru
+
+Pokud již máte uložené vyhledávání v soboru `files.json`, můžete je načíst pomocí tlačítka `Load`.
+
+### Uložení odkazů do souboru
+
+Po vyhledání souborů je možné je uložit do souboru `files.json` pomocí tlačítka `Save`. Pro pozdější použití.
+
+> [!note] 
+> Uloží se pouze soubory, které jsou označeny.
+
+### Stažení souborů
+Oznáčte soubory, které chcete stáhnout a stiskněte tlačítko `Download`.
 
 ## Použití v TUI
 
 ```bash
-main.py --tui
+python3 main.py --tui
 ```
 
 > [!warning]
