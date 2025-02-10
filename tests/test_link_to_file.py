@@ -35,6 +35,37 @@ def test_from_json(lines, link_2_files):
         assert str(link_2_file) == str(link_2_files[i])
         assert link_2_file == link_2_files[i]
         
+# test new_link_2_files = list(set(old_link_2_files + links_to_add_to_file))
+@pytest.mark.parametrize("old_links, new_links, result", [
+    (
+        [
+            Link_to_file("A", "link", "size"),
+            Link_to_file("title", "link", "size"),
+            Link_to_file("title", "link", "size")
+        ],
+        [
+            Link_to_file("B", "link", "size"),
+            Link_to_file("title", "link", "size"),
+            Link_to_file("title", "link", "size")
+        ],
+        [
+            Link_to_file("A", "link", "size"),
+            Link_to_file("B", "link", "size"),
+            Link_to_file("title", "link", "size")
+        ]
+    )
+])
+def test_add_links_to_list(old_links, new_links, result):
+    new_links = add_links_to_list(old_links, new_links)
+    result = list(set(result))
+    assert len(new_links) == len(result)
+    for i, link in enumerate(new_links):
+        if link != result[i]:
+            print(link)
+            print("?=")
+            print(result[i])
+        assert link == result[i]
+
 def test_server_name():
     link_2_file = Link_to_file("title", "https://sdilej.cz/free/index.php?id=28238129", "size")
     assert link_2_file.server_name() == "sdilej.cz"

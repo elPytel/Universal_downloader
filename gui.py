@@ -48,9 +48,9 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Title", text="Title")
         self.results_tree.heading("Size", text="Size")
         self.results_tree.heading("Link", text="Link")
-        self.results_tree.column("check", width=50, anchor="center")
+        self.results_tree.column("check", width=10, anchor="center")
         self.results_tree.column("Title", width=200)
-        self.results_tree.column("Size", width=100)
+        self.results_tree.column("Size", width=30)
         self.results_tree.column("Link", width=200)
         self.results_tree.pack(fill=tk.BOTH, expand=True)
 
@@ -88,13 +88,19 @@ class DownloaderGUI(tk.Tk):
 
     def download_selected(self):
         self.log("Download initiated...")
+        
         selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        self.log(f"Selected items for download: {selected_items}")
+        
+        link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
         
         if not os.path.exists(JSON_FILE):
-            save_links_to_file(selected_items, JSON_FILE)
+            save_links_to_file(link_2_files, JSON_FILE)
         else:
-            add_links_to_file(selected_items, JSON_FILE)
+            add_links_to_file(link_2_files, JSON_FILE)
+
+        for link_2_file in link_2_files:
+            link_2_file.download()
+            self.log(f"Downloaded: {link_2_file.title}")
 
     def save_selected(self):
         self.log("Saving selected items...")
