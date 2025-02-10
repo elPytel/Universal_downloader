@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
+from main import download_folder, JSON_FILE
 
 class DownloaderGUI(tk.Tk):
     def __init__(self):
@@ -64,6 +65,12 @@ class DownloaderGUI(tk.Tk):
 
         self.check_vars = []
 
+        # Define tags for colored text
+        self.log_text.tag_config("info", foreground="blue")
+        self.log_text.tag_config("warning", foreground="orange")
+        self.log_text.tag_config("error", foreground="red")
+        self.log_text.tag_config("success", foreground="green")
+
     def get_check_symbol(self, checked):
         return "✓" if checked else "✗"
 
@@ -74,60 +81,79 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.item(item, values=(self.get_check_symbol(self.check_vars[index]), *self.results_tree.item(item)["values"][1:]))
 
     def search_files(self):
-        self.log("Search initiated...")
+        self.log("Search initiated...", "info")
         prompt = self.search_entry.get()
         file_type = self.file_type_var.get()
         search_type = self.search_type_var.get()
         
         link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
-        self.log(f"Number of files found: {len(link_2_files)}")
+        self.log(f"Number of files found: {len(link_2_files)}", "info")
         
         self.check_vars = [False for _ in link_2_files]
         for i, link_2_file in enumerate(link_2_files):
             self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
 
     def download_selected(self):
-        self.log("Download initiated...")
+        self.log("Download initiated...", "info")
         
         selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
         
         link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
-        
-        if not os.path.exists(JSON_FILE):
-            save_links_to_file(link_2_files, JSON_FILE)
-        else:
-            add_links_to_file(link_2_files, JSON_FILE)
 
+        successfull_files = []
         for link_2_file in link_2_files:
-            link_2_file.download()
-            self.log(f"Downloaded: {link_2_file.title}")
+            
+            # test if file exists
+            if os.path.exists(f"{download_folder}/{link_2_file.title}"):
+                self.log(f"File {link_2_file.title} already exists.", "warning")
+                successfull_files.append(link_2_file)
+                continue
+            
+            self.log(f"Downloading file: {link_2_file.title} of size {link_2_file.size}...", "info")
+
+            link_2_file.download(download_folder)
+
+            # test file size > 1kb
+            file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+            if (not compare_sizes(file_size, link_2_file.size, 20/100) and link_2_file.size != None) or (link_2_file.size == None and file_size < 1024):
+                self.log(f"File {link_2_file.title} was not downloaded correctly.", "error")
+                self.log(f"File size: {file_size} expected: {link_2_file.size}", "error")
+                if not DEBUG:
+                    os.remove(f"{download_folder}/{link_2_file.title}")
+                    self.log(f"File {link_2_file.title} was removed.", "info")
+            else:
+                successfull_files.append(link_2_file)
+                self.log(f"File {link_2_file.title} of size {size_int_2_string(file_size)} was downloaded.", "success")
 
     def save_selected(self):
-        self.log("Saving selected items...")
+        self.log("Saving selected items...", "info")
 
         selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
         
         link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
         save_links_to_file(link_2_files, JSON_FILE)
         
-        self.log(f"Saved items: {len(link_2_files)}")
+        self.log(f"Saved items: {len(link_2_files)}", "success")
 
     def load_selected(self):
-        self.log("Loading selected items...")
+        self.log("Loading selected items...", "info")
         link_2_files = load_links_from_file(JSON_FILE)
         self.results_tree.delete(*self.results_tree.get_children())
         self.check_vars = [False for _ in link_2_files]
         for i, link_2_file in enumerate(link_2_files):
             self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
-        self.log(f"Loaded items: {link_2_files}")
+        self.log(f"Loaded items: {len(link_2_files)}", "success")
 
-    def log(self, message):
+    def log(self, message, tag="info"):
         self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.insert(tk.END, message + "\n", tag)
         self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)
 
 def main():
+    if not os.path.exists(JSON_FILE):
+        open(JSON_FILE, 'w').close()
+    
     app = DownloaderGUI()
     app.mainloop()
 
