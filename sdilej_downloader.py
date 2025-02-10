@@ -10,6 +10,8 @@ class Sdilej_downloader(Download_page_search):
         pass
     
     def search(self, prompt, file_type="all", search_type="relevance"):
+        if prompt is None:
+            return None
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
         page = download_page(url)
         return Sdilej_downloader.parse_catalogue(page)
@@ -74,11 +76,13 @@ class Sdilej_downloader(Download_page_search):
     def parse_catalogue(page):
         """
         Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
-        
+
         yield: Link_to_file
         """
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         content = soup.find("div", class_="row post")
+        if content is None:
+            return None
         content = remove_style(content)
         for videobox in content.find_all(class_="videobox-desc"):
             try:

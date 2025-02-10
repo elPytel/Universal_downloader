@@ -1,0 +1,103 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: cs\n"
+
+msgid "Universal Downloader"
+msgstr "Univerzální Stahovač"
+
+msgid "Search:"
+msgstr "Hledat:"
+
+msgid "Max Results:"
+msgstr "Maximální počet výsledků:"
+
+msgid "Search"
+msgstr "Hledat"
+
+msgid "Download Selected"
+msgstr "Stáhnout vybrané"
+
+msgid "Save Selected"
+msgstr "Uložit vybrané"
+
+msgid "Load from file"
+msgstr "Načíst ze souboru"
+
+msgid "Remove successful from json"
+msgstr "Odstranit úspěšné ze souboru json"
+
+msgid "Clear All"
+msgstr "Vymazat vše"
+
+msgid "Clear Not Selected"
+msgstr "Vymazat nevybrané"
+
+msgid "Select/Deselect All"
+msgstr "Vybrat/Odznačit vše"
+
+msgid "Select"
+msgstr "Vybrat"
+
+msgid "Title"
+msgstr "Název"
+
+msgid "Size"
+msgstr "Velikost"
+
+msgid "Link"
+msgstr "Odkaz"
+
+msgid "Toggled select/deselect all."
+msgstr "Přepnuto vybrat/odznačit vše."
+
+msgid "Search initiated..."
+msgstr "Hledání zahájeno..."
+
+msgid "\nNumber of files found: {}"
+msgstr "\nPočet nalezených souborů: {}"
+
+msgid "Download initiated..."
+msgstr "Stahování zahájeno..."
+
+msgid "File {} already exists."
+msgstr "Soubor {} již existuje."
+
+msgid "Downloading file: {} of size {}..."
+msgstr "Stahování souboru: {} o velikosti {}..."
+
+msgid "File {} was not downloaded correctly."
+msgstr "Soubor {} nebyl správně stažen."
+
+msgid "File size: {} expected: {}"
+msgstr "Velikost souboru: {} očekáváno: {}"
+
+msgid "File {} was removed."
+msgstr "Soubor {} byl odstraněn."
+
+msgid "File {} of size {} was downloaded."
+msgstr "Soubor {} o velikosti {} byl stažen."
+
+msgid "Downloaded files: {}"
+msgstr "Stažené soubory: {}"
+
+msgid "Removing successful downloads from the list..."
+msgstr "Odstraňování úspěšných stahování ze seznamu..."
+
+msgid "Saving selected items..."
+msgstr "Ukládání vybraných položek..."
+
+msgid "Saved items: {}"
+msgstr "Uloženo položek: {}"
+
+msgid "Loading selected items..."
+msgstr "Načítání vybraných položek..."
+
+msgid "Loaded items: {}"
+msgstr "Načteno položek: {}"
+
+msgid "Cleared all displayed files."
+msgstr "Vymazány všechny zobrazené soubory."
+
+msgid "Cleared not selected files."
+msgstr "Vymazány nevybrané soubory."
