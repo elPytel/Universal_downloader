@@ -30,6 +30,13 @@ class DownloaderGUI(tk.Tk):
         self.search_type_menu = ttk.OptionMenu(search_frame, self.search_type_var, "relevance", *Sdilej_downloader.search_types.keys())
         self.search_type_menu.pack(side=tk.LEFT, padx=5)
 
+        self.max_results_label = ttk.Label(search_frame, text="Max Results:")
+        self.max_results_label.pack(side=tk.LEFT, padx=5)
+
+        self.max_results_entry = ttk.Entry(search_frame, width=5)
+        self.max_results_entry.pack(side=tk.LEFT, padx=5)
+        self.max_results_entry.insert(0, "10")  # Default value
+
         self.search_button = ttk.Button(search_frame, text="Search", command=self.start_search_thread)
         self.search_button.pack(side=tk.LEFT, padx=5)
 
@@ -55,6 +62,9 @@ class DownloaderGUI(tk.Tk):
         self.clear_not_selected_button = ttk.Button(action_frame, text="Clear Not Selected", command=self.clear_not_selected)
         self.clear_not_selected_button.pack(side=tk.LEFT, padx=5)
 
+        self.select_all_button = ttk.Button(action_frame, text="Select/Deselect All", command=self.toggle_select_all)
+        self.select_all_button.pack(side=tk.LEFT, padx=5)
+
         self.results_frame = ttk.Frame(self)
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
@@ -64,9 +74,9 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Size", text="Size")
         self.results_tree.heading("Link", text="Link")
         self.results_tree.column("check", width=10, anchor="center")
-        self.results_tree.column("Title", width=200)
+        self.results_tree.column("Title", width=220)
         self.results_tree.column("Size", width=30)
-        self.results_tree.column("Link", width=200)
+        self.results_tree.column("Link", width=180)
         self.results_tree.pack(fill=tk.BOTH, expand=True)
 
         self.results_tree.bind("<Double-1>", self.toggle_check)
@@ -94,21 +104,35 @@ class DownloaderGUI(tk.Tk):
         self.check_vars[index] = not self.check_vars[index]
         self.results_tree.item(item, values=(self.get_check_symbol(self.check_vars[index]), *self.results_tree.item(item)["values"][1:]))
 
+    def toggle_select_all(self):
+        select_all = not all(self.check_vars)
+        for i in range(len(self.check_vars)):
+            self.check_vars[i] = select_all
+            item = self.results_tree.get_children()[i]
+            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]))
+        self.log("Toggled select/deselect all.", "info")
+
     def start_search_thread(self):
         threading.Thread(target=self.search_files).start()
 
     def search_files(self):
-        self.log("Search initiated...", "info")
+        self.log("Search initiated...", "info", end="")
         prompt = self.search_entry.get()
         file_type = self.file_type_var.get()
         search_type = self.search_type_var.get()
+        max_results = int(self.max_results_entry.get())
         
         link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
-        self.log(f"Number of files found: {len(link_2_files)}", "info")
-        
-        self.check_vars = [False for _ in link_2_files]
+        number_of_files = 0
         for i, link_2_file in enumerate(link_2_files):
+            if max_results and i >= max_results:
+                break
+            self.check_vars.append(False)
             self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+            number_of_files = i + 1
+            self.log(".", "info", end="")
+        
+        self.log(f"\nNumber of files found: {number_of_files}", "success")
 
     def start_download_thread(self):
         threading.Thread(target=self.download_selected).start()
@@ -182,9 +206,9 @@ class DownloaderGUI(tk.Tk):
             self.results_tree.insert("", "end", values=values, tags=tags)
         self.log("Cleared not selected files.", "info")
 
-    def log(self, message, tag="info"):
+    def log(self, message, tag="info", end="\n"):
         self.log_text.config(state=tk.NORMAL)
-        self.log_text.insert(tk.END, message + "\n", tag)
+        self.log_text.insert(tk.END, message + end, tag)
         self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)
 
