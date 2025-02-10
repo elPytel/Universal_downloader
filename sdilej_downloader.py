@@ -1,43 +1,7 @@
 import bs4
 from link_to_file import *
 from basic_colors import *
-
-def remove_style(soup):
-    """
-    Odstraní vše mezi tagy: <style>...</style> z obsahu content.
-    """
-    for style in soup("style"):
-        style.decompose()
-    return soup
-
-def remove_empty_lines(text):
-    return "\n".join([line for line in text.split("\n") if line.strip() != ""])
-
-def any_text_coresponds_to(text, texts):
-    return any([t in text for t in texts])
-
-class Download_page_search:
-    
-    file_types = {
-        "all": "",
-        "video": "video",
-        "audio": "audio",
-        "archive": "archive",
-        "images": "image"
-    }
-    search_types = {
-        "relevance": "",
-        "most_downloaded": "3",
-        "newest": "4",
-        "biggest": "1",
-        "smallest": "2"
-    }
-        
-    def __init__(self):
-        raise NotImplementedError()
-    
-    def search(self, prompt, file_type="all", search_type="relevance"):
-        raise NotImplementedError()
+from download_page_search import *
 
 class Sdilej_downloader(Download_page_search):
     webpage = "https://sdilej.cz"
@@ -56,7 +20,7 @@ class Sdilej_downloader(Download_page_search):
         """
         return f"{Sdilej_downloader.webpage}/{prompt}/s/{Sdilej_downloader.file_types[file_type]}-{Sdilej_downloader.search_types[search_type]}"
 
-    def get_atributes_from_catalogue(soup):
+    def get_atributes_from_catalogue(soup) -> Link_to_file:
         try:
             link = soup.find("a").get("href")
             title = soup.find("a").get("title")
@@ -66,7 +30,7 @@ class Sdilej_downloader(Download_page_search):
             raise ValueError("ERROR: unable to parse atributes." + str(e))
         return link_2_file
 
-    def get_atributes_from_file_page(soup):
+    def get_atributes_from_file_page(soup) -> Link_to_file:
         try:
             title = soup.find("h1").text
             size = soup.find("b").next_sibling.replace("|", "").strip()
@@ -76,7 +40,7 @@ class Sdilej_downloader(Download_page_search):
             raise ValueError("ERROR: unable to parse atributes." + str(e))
         return link_2_file
 
-    def is_valid_download_page(page):
+    def is_valid_download_page(page) -> bool:
         """
         Stránka neplatná, pokud obsahuje: 
         <h1 class="red">Stahuj a nahrávej soubory neomezenou rychlostí</h1>
@@ -109,7 +73,9 @@ class Sdilej_downloader(Download_page_search):
 
     def parse_catalogue(page):
         """
-        Vrátí obsah hlavní stránky.
+        Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
+        
+        yield: Link_to_file
         """
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         content = soup.find("div", class_="row post")
