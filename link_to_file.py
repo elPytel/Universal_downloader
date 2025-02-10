@@ -24,7 +24,7 @@ def size_string_2_bytes(size : str) -> int:
     """
     Converts a string with a size to an integer in bytes.
     """
-    size = size.lower()
+    size = size.lower().strip()
     if size.endswith("kb"):
         return int(float(size[:-2]) * 1024)
     if size.endswith("mb"):

@@ -75,7 +75,8 @@ def test_server_name():
     ("2.8 MB", 2.8*1024*1024),
     ("2.8 KB", 2.8*1024),
     ("2.8 B", 2.8),
-    ("2.8 ", 2.8)
+    ("2.8 ", 2.8),
+    ("27.8 MB ", 27.8*1024*1024)
 ])
 def test_size_string_2_bytes(size, value):
     assert size_string_2_bytes(size) == int(value)

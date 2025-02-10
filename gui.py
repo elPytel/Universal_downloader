@@ -35,7 +35,7 @@ class DownloaderGUI(tk.Tk):
 
         self.max_results_entry = ttk.Entry(search_frame, width=5)
         self.max_results_entry.pack(side=tk.LEFT, padx=5)
-        self.max_results_entry.insert(0, "10")  # Default value
+        self.max_results_entry.insert(0, "100")  # Default value
 
         self.search_button = ttk.Button(search_frame, text="Search", command=self.start_search_thread)
         self.search_button.pack(side=tk.LEFT, padx=5)
@@ -69,9 +69,9 @@ class DownloaderGUI(tk.Tk):
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
         self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Link"), show="headings")
-        self.results_tree.heading("check", text="Select")
-        self.results_tree.heading("Title", text="Title")
-        self.results_tree.heading("Size", text="Size")
+        self.results_tree.heading("check", text="Select", command=lambda: self.sort_treeview("check", False))
+        self.results_tree.heading("Title", text="Title", command=lambda: self.sort_treeview("Title", False))
+        self.results_tree.heading("Size", text="Size", command=lambda: self.sort_treeview("Size", False))
         self.results_tree.heading("Link", text="Link")
         self.results_tree.column("check", width=10, anchor="center")
         self.results_tree.column("Title", width=220)
@@ -211,6 +211,20 @@ class DownloaderGUI(tk.Tk):
         self.log_text.insert(tk.END, message + end, tag)
         self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)
+
+    def sort_treeview(self, col, reverse):
+        items = [(self.results_tree.set(k, col), k) for k in self.results_tree.get_children('')]
+        if col == "Size":
+            items.sort(key=lambda t: size_string_2_bytes(t[0]), reverse=reverse)
+        elif col == "check":
+            items.sort(key=lambda t: self.check_vars[int(self.results_tree.item(t[1], "tags")[0])], reverse=reverse)
+        else:
+            items.sort(reverse=reverse)
+        
+        for index, (val, k) in enumerate(items):
+            self.results_tree.move(k, '', index)
+        
+        self.results_tree.heading(col, command=lambda: self.sort_treeview(col, not reverse))
 
 def main():
     if not os.path.exists(JSON_FILE):

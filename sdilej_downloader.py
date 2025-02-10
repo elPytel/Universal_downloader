@@ -69,7 +69,7 @@ class Sdilej_downloader(Download_page_search):
     def get_atributes_from_file_page(soup):
         try:
             title = soup.find("h1").text
-            size = soup.find("b").next_sibling.strip().replace("|", "")
+            size = soup.find("b").next_sibling.replace("|", "").strip()
             link = Sdilej_downloader.webpage+str(soup.find("a", class_="btn btn-danger").get("href"))
             link_2_file = Link_to_file(title, link, size)
         except Exception as e:
