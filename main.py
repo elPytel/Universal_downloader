@@ -45,6 +45,7 @@ if __name__ == "__main__":
     
     if args.verbose:
         VERBOSE = True
+        set_verbose(True)
     
     if args.debug:
         DEBUG = True
