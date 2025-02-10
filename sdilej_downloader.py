@@ -48,8 +48,7 @@ class Sdilej_downloader(Download_page_search):
     def search(self, prompt, file_type="all", search_type="relevance"):
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
         page = download_page(url)
-        link_2_files = Sdilej_downloader.parse_catalogue(page)
-        return link_2_files
+        return Sdilej_downloader.parse_catalogue(page)
     
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
         """
@@ -115,17 +114,11 @@ class Sdilej_downloader(Download_page_search):
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         content = soup.find("div", class_="row post")
         content = remove_style(content)
-        link_2_files = []
         for videobox in content.find_all(class_="videobox-desc"):
             try:
                 catalogue_file = Sdilej_downloader.get_atributes_from_catalogue(videobox)
-                if DEBUG:
-                    print("")
-                    print(catalogue_file.colorize())
                 download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.link))
                 link_2_file = Sdilej_downloader.get_atributes_from_file_page(download_page_content)
-                link_2_files.append(link_2_file)
+                yield link_2_file
             except ValueError as e:
                 print_error(str(e) + " for file: " + catalogue_file.title, False)
-        return link_2_files
-

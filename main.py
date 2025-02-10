@@ -36,6 +36,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--download", action="store_true", help="Download the found files.")
     parser.add_argument("-f", "--file", type=str, help="File to download.")
     parser.add_argument("-F", "--folder", type=str, help="Folder to download to.")
+    parser.add_argument("-n", "--number", type=int, help="Max number of files to search.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose mode.")
     parser.add_argument("-D", "--debug", action="store_true", help="Debug mode.")
     parser.add_argument("-g", "--tui", action="store_true", help="Start TUI.")
@@ -82,12 +83,23 @@ if __name__ == "__main__":
         file_type = args.file_type if args.file_type else "all"
         search_type = args.search_type if args.search_type else "relevance"
                 
-        link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
+        link_2_files = []
+        for i, link_2_file in enumerate(Sdilej_downloader().search(prompt, file_type, search_type)):
+            if args.number and i >= args.number:
+                break
+            if DEBUG:
+                print("")
+                print(link_2_file.colorize())
+            link_2_files.append(link_2_file)
         
         print_info(f"Number of files: {len(link_2_files)}")
         
+        """
         link_2_files_from_file = load_links_from_file(JSON_FILE)
         link_2_files = list(set(link_2_files + link_2_files_from_file))
+        save_links_to_file(link_2_files, JSON_FILE)
+        """
+        #add_links_to_file(link_2_files, JSON_FILE)
         save_links_to_file(link_2_files, JSON_FILE)
         
     if args.download:
