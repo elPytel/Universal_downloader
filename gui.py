@@ -1,3 +1,5 @@
+
+import os
 import json
 import gettext
 import threading
@@ -8,8 +10,11 @@ from sdilej_downloader import Sdilej_downloader
 from main import download_folder, JSON_FILE
 
 CONFIG_FILE = "config.json"
+DEFAULT_LANGUAGE = "en"
 
 class DownloaderGUI(tk.Tk):
+    lang_codes = ["en", "cs"]
+
     def __init__(self):
         super().__init__()
         self.current_language = tk.StringVar(value=self.load_language())
@@ -22,9 +27,9 @@ class DownloaderGUI(tk.Tk):
         try:
             with open(CONFIG_FILE, "r") as file:
                 config = json.load(file)
-                return config.get("language", "cs")
+                return config.get("language", DEFAULT_LANGUAGE)
         except FileNotFoundError:
-            return "cs"
+            return DEFAULT_LANGUAGE
 
     def save_language(self):
         config = {"language": self.current_language.get()}
@@ -33,14 +38,16 @@ class DownloaderGUI(tk.Tk):
 
     def setup_translation(self):
         lang_code = self.current_language.get()
+        global _
         try:
             lang = gettext.translation('universal_downloader', localedir='locales', languages=[lang_code])
             lang.install()
+            print_success(f"Translation loaded for {lang_code}.")
+            _ = lang.gettext
         except Exception as e:
-            print(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
+            print_error(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
             gettext.install('universal_downloader', localedir='locales')
-        global _
-        _ = gettext.gettext
+            _ = gettext.gettext
 
     def create_widgets(self):
         # Language selection
@@ -50,7 +57,7 @@ class DownloaderGUI(tk.Tk):
         self.lang_label = ttk.Label(lang_frame, text=_("Language:"))
         self.lang_label.pack(side=tk.LEFT, padx=5)
 
-        self.lang_menu = ttk.OptionMenu(lang_frame, self.current_language, self.current_language.get(), "en", "cs", command=self.change_language)
+        self.lang_menu = ttk.OptionMenu(lang_frame, self.current_language, self.current_language.get(), *self.lang_codes, command=self.change_language)
         self.lang_menu.pack(side=tk.LEFT, padx=5)
 
         search_frame = ttk.Frame(self)
@@ -273,9 +280,11 @@ class DownloaderGUI(tk.Tk):
 
     def update_ui_texts(self):
         self.title(_("Universal Downloader"))
+
         self.search_label.config(text=_("Search:"))
         self.search_button.config(text=_("Search"))
         self.max_results_label.config(text=_("Max Results:"))
+
         self.download_button.config(text=_("Download Selected"))
         self.save_button.config(text=_("Save Selected"))
         self.load_button.config(text=_("Load from file"))
@@ -283,6 +292,7 @@ class DownloaderGUI(tk.Tk):
         self.clear_button.config(text=_("Clear All"))
         self.clear_not_selected_button.config(text=_("Clear Not Selected"))
         self.select_all_button.config(text=_("Select/Deselect All"))
+
         self.results_tree.heading("check", text=_("Select"))
         self.results_tree.heading("Title", text=_("Title"))
         self.results_tree.heading("Size", text=_("Size"))
@@ -292,6 +302,9 @@ class DownloaderGUI(tk.Tk):
 def main():
     if not os.path.exists(JSON_FILE):
         open(JSON_FILE, 'w').close()
+    
+    if not os.path.exists("locales/cs/LC_MESSAGES/universal_downloader.mo"):
+        print_error("Translation file not found!")
     
     app = DownloaderGUI()
     app.mainloop()

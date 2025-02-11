@@ -27,6 +27,9 @@ msgstr "Načíst ze souboru"
 msgid "Remove successful from json"
 msgstr "Odstranit úspěšné ze souboru"
 
+msgid "Language changed to {}."
+msgstr "Jazyk změněn na {}."
+
 msgid "Clear All"
 msgstr "Vymazat vše"
 
