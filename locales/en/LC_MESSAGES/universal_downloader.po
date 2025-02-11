@@ -1,0 +1,103 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "Universal Downloader"
+msgstr "Universal Downloader"
+
+msgid "Search:"
+msgstr "Search:"
+
+msgid "Max Results:"
+msgstr "Max Results:"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Download Selected"
+msgstr "Download Selected"
+
+msgid "Save Selected"
+msgstr "Save Selected"
+
+msgid "Load from file"
+msgstr "Load from file"
+
+msgid "Remove successful from json"
+msgstr "Remove successful from json"
+
+msgid "Clear All"
+msgstr "Clear All"
+
+msgid "Clear Not Selected"
+msgstr "Clear Not Selected"
+
+msgid "Select/Deselect All"
+msgstr "Select/Deselect All"
+
+msgid "Select"
+msgstr "Select"
+
+msgid "Title"
+msgstr "Title"
+
+msgid "Size"
+msgstr "Size"
+
+msgid "Link"
+msgstr "Link"
+
+msgid "Toggled select/deselect all."
+msgstr "Toggled select/deselect all."
+
+msgid "Search initiated..."
+msgstr "Search initiated..."
+
+msgid "\nNumber of files found: {}"
+msgstr "\nNumber of files found: {}"
+
+msgid "Download initiated..."
+msgstr "Download initiated..."
+
+msgid "File {} already exists."
+msgstr "File {} already exists."
+
+msgid "Downloading file: {} of size {}..."
+msgstr "Downloading file: {} of size {}..."
+
+msgid "File {} was not downloaded correctly."
+msgstr "File {} was not downloaded correctly."
+
+msgid "File size: {} expected: {}"
+msgstr "File size: {} expected: {}"
+
+msgid "File {} was removed."
+msgstr "File {} was removed."
+
+msgid "File {} of size {} was downloaded."
+msgstr "File {} of size {} was downloaded."
+
+msgid "Downloaded files: {}"
+msgstr "Downloaded files: {}"
+
+msgid "Removing successful downloads from the list..."
+msgstr "Removing successful downloads from the list..."
+
+msgid "Saving selected items..."
+msgstr "Saving selected items..."
+
+msgid "Saved items: {}"
+msgstr "Saved items: {}"
+
+msgid "Loading selected items..."
+msgstr "Loading selected items..."
+
+msgid "Loaded items: {}"
+msgstr "Loaded items: {}"
+
+msgid "Cleared all displayed files."
+msgstr "Cleared all displayed files."
+
+msgid "Cleared not selected files."
+msgstr "Cleared not selected files."

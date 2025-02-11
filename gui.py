@@ -36,7 +36,8 @@ class DownloaderGUI(tk.Tk):
         try:
             lang = gettext.translation('universal_downloader', localedir='locales', languages=[lang_code])
             lang.install()
-        except FileNotFoundError:
+        except Exception as e:
+            print(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
             gettext.install('universal_downloader', localedir='locales')
         global _
         _ = gettext.gettext

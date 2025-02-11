@@ -25,13 +25,13 @@ msgid "Load from file"
 msgstr "Načíst ze souboru"
 
 msgid "Remove successful from json"
-msgstr "Odstranit úspěšné ze souboru json"
+msgstr "Odstranit úspěšné ze souboru"
 
 msgid "Clear All"
 msgstr "Vymazat vše"
 
 msgid "Clear Not Selected"
-msgstr "Vymazat nevybrané"
+msgstr "Vymazat neoznačené"
 
 msgid "Select/Deselect All"
 msgstr "Vybrat/Odznačit vše"
