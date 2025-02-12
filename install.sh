@@ -1,13 +1,13 @@
-
 #!/bin/bash
 
 # Install Python dependencies
 pip install -r requirements.txt
 
 # Compile language files
+localisation="universal_downloader"
 for lang in locales/*; do
     if [ -d "$lang/LC_MESSAGES" ]; then
-        msgfmt -o "$lang/LC_MESSAGES/universal_downloader.mo" "$lang/LC_MESSAGES/universal_downloader.po"
+        msgfmt -o "$lang/LC_MESSAGES/$localisation.mo" "$lang/LC_MESSAGES/$localisation.po"
     fi
 done
 
