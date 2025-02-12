@@ -5,13 +5,13 @@ Zdroje:
 """
 
 import os
+import sys
+import queue
 import argparse 
+import threading
 from time import sleep
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
-import threading
-import queue
-import sys
 
 JSON_FILE = "files.json"
 FAILED_FILES = "failed_files.json"
@@ -93,14 +93,7 @@ if __name__ == "__main__":
             link_2_files.append(link_2_file)
         
         print_info(f"Number of files: {len(link_2_files)}")
-        
-        """
-        link_2_files_from_file = load_links_from_file(JSON_FILE)
-        link_2_files = add_links_to_list(link_2_files_from_file, link_2_files)
-        save_links_to_file(link_2_files, JSON_FILE)
-        """
-        #add_links_to_file(link_2_files, JSON_FILE)
-        save_links_to_file(link_2_files, JSON_FILE)
+        add_links_to_file(link_2_files, JSON_FILE)
         
     if args.download:
         link_2_files = load_links_from_file(JSON_FILE)
