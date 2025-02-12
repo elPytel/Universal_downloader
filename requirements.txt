@@ -4,4 +4,5 @@ argparse
 requests
 pytermgui
 PyYAML
+Pillow
 basic-colors

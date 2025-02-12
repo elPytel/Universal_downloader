@@ -7,6 +7,7 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk
 from link_to_file import *
+from PIL import ImageTk
 from sdilej_downloader import Sdilej_downloader
 from main import download_folder, JSON_FILE
 from download_page_search import InsufficientTimeoutError
@@ -21,6 +22,8 @@ LANGUAGES = {
 }
 
 DOMAIN = 'universal_downloader'
+ICON_FILE = 'icon.png'
+ASSETS_DIR = 'assets'
 
 def compile_mo_files():
     for lang in LANGUAGES.values():
@@ -36,6 +39,13 @@ class DownloaderGUI(tk.Tk):
 
     def __init__(self):
         super().__init__()
+        icon_path = os.path.join(ASSETS_DIR, "icon.png")
+        if os.path.isfile(icon_path):
+            icon = ImageTk.PhotoImage(file=icon_path)
+            self.iconphoto(True, icon)
+        else:
+            print(f"Icon: '{icon_path}' not found.")
+        
         self.settings = {}
         self.settings = self.load_config()
         self.current_language = tk.StringVar(value=self.settings.get("language", DEFAULT_LANGUAGE))
