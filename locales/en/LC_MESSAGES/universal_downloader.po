@@ -101,3 +101,9 @@ msgstr "Cleared all displayed files."
 
 msgid "Cleared not selected files."
 msgstr "Cleared not selected files."
+
+msgid "Language changed to {}."
+msgstr "Language changed to {}."
+
+msgid "Translation file not found!"
+msgstr "Translation file not found!"
