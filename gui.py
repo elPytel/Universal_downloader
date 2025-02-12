@@ -86,12 +86,13 @@ class DownloaderGUI(tk.Tk):
 
         # Settings menu
         settings_menu = tk.Menu(menubar, tearoff=0)
-        settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
-        settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         lang_menu = tk.Menu(settings_menu, tearoff=0)
         for lang in self.lang_codes:
             lang_menu.add_radiobutton(label=lang, variable=self.current_language, value=lang, command=self.change_language)
         settings_menu.add_cascade(label=_("Language"), menu=lang_menu)
+        settings_menu.add_separator()
+        settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
+        settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         menubar.add_cascade(label=_("Settings"), menu=settings_menu)
 
         search_frame = ttk.Frame(self)
@@ -145,8 +146,8 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Size", text=_("Size"), command=lambda: self.sort_treeview("Size", False))
         self.results_tree.heading("Link", text=_("Link"))
         self.results_tree.column("check", width=10, anchor="center")
-        self.results_tree.column("Title", width=220)
-        self.results_tree.column("Size", width=30)
+        self.results_tree.column("Title", width=240)
+        self.results_tree.column("Size", width=20)
         self.results_tree.column("Link", width=180)
         self.results_tree.pack(fill=tk.BOTH, expand=True)
 

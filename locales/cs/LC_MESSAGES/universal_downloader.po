@@ -12,6 +12,9 @@ msgstr "Soubor"
 msgid "Settings"
 msgstr "Nastavení"
 
+msgid "Language"
+msgstr "Jazyk"
+
 msgid "Search:"
 msgstr "Hledat:"
 
