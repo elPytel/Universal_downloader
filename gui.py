@@ -1,9 +1,9 @@
-
 import os
 import json
 import time
 import gettext
 import threading
+import subprocess
 import tkinter as tk
 from tkinter import ttk
 from link_to_file import *
@@ -14,54 +14,81 @@ CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
 TIME_OUT = 50
 
+LANGUAGES = {
+    'EN': 'en',
+    'CZ': 'cs'
+}
+
+DOMAIN = 'universal_downloader'
+
+def compile_mo_files():
+    for lang in LANGUAGES.values():
+        po_file = os.path.join('locales', lang, 'LC_MESSAGES', DOMAIN + '.po')
+        mo_file = os.path.join('locales', lang, 'LC_MESSAGES', DOMAIN + '.mo')
+        if os.path.exists(po_file):
+            if not os.path.exists(mo_file) or os.path.getmtime(po_file) > os.path.getmtime(mo_file):
+                print(f"Compiling {po_file} to {mo_file}")
+                subprocess.run(['msgfmt', '-o', mo_file, po_file], check=True)
+
 class DownloaderGUI(tk.Tk):
-    lang_codes = ["en", "cs"]
+    lang_codes = LANGUAGES.values()
 
     def __init__(self):
         super().__init__()
-        self.current_language = tk.StringVar(value=self.load_language())
+        self.settings = {}
+        self.settings = self.load_config()
+        self.current_language = tk.StringVar(value=self.settings.get("language", DEFAULT_LANGUAGE))
+        self.remove_successful_var = tk.BooleanVar(value=self.settings.get("remove_successful", False))
+        self.remove_successful_var.trace_add("write", self.update_remove_successful)
         self.setup_translation()
         self.title(_("Universal Downloader"))
         self.geometry("800x600")
         self.create_widgets()
 
-    def load_language(self):
+    def load_config(self, config_file=CONFIG_FILE):
         try:
-            with open(CONFIG_FILE, "r") as file:
-                config = json.load(file)
-                return config.get("language", DEFAULT_LANGUAGE)
+            with open(config_file, "r") as file:
+                return json.load(file)
         except FileNotFoundError:
-            return DEFAULT_LANGUAGE
+            return {}
+        
+    def save_config(self, config_file=CONFIG_FILE):
+        with open(config_file, "w") as file:
+            json.dump(self.settings, file)
 
-    def save_language(self):
-        config = {"language": self.current_language.get()}
-        with open(CONFIG_FILE, "w") as file:
-            json.dump(config, file)
-
-    def setup_translation(self):
+    def setup_translation(self, domain=DOMAIN):
         lang_code = self.current_language.get()
         global _
         try:
-            lang = gettext.translation('universal_downloader', localedir='locales', languages=[lang_code])
+            lang = gettext.translation(domain, localedir='locales', languages=[lang_code])
             lang.install()
             if DEBUG:
                 print_success(f"Translation loaded for {lang_code}.")
             _ = lang.gettext
         except Exception as e:
             print_error(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
-            gettext.install('universal_downloader', localedir='locales')
+            gettext.install(domain, localedir='locales')
             _ = gettext.gettext
 
     def create_widgets(self):
-        # Language selection
-        lang_frame = ttk.Frame(self)
-        lang_frame.pack(pady=5, padx=5, fill=tk.X)
+        # Menu bar
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
 
-        self.lang_label = ttk.Label(lang_frame, text=_("Language:"))
-        self.lang_label.pack(side=tk.LEFT, padx=5)
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label=_("Save Selected"), command=self.save_selected)
+        file_menu.add_command(label=_("Load from file"), command=self.load_selected)
+        menubar.add_cascade(label=_("File"), menu=file_menu)
 
-        self.lang_menu = ttk.OptionMenu(lang_frame, self.current_language, self.current_language.get(), *self.lang_codes, command=self.change_language)
-        self.lang_menu.pack(side=tk.LEFT, padx=5)
+        # Settings menu
+        settings_menu = tk.Menu(menubar, tearoff=0)
+        settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
+        lang_menu = tk.Menu(settings_menu, tearoff=0)
+        for lang in self.lang_codes:
+            lang_menu.add_radiobutton(label=lang, variable=self.current_language, value=lang, command=self.change_language)
+        settings_menu.add_cascade(label=_("Language"), menu=lang_menu)
+        menubar.add_cascade(label=_("Settings"), menu=settings_menu)
 
         search_frame = ttk.Frame(self)
         search_frame.pack(pady=5, padx=5, fill=tk.X)
@@ -95,16 +122,6 @@ class DownloaderGUI(tk.Tk):
 
         self.download_button = ttk.Button(action_frame, text=_("Download Selected"), command=self.start_download_thread)
         self.download_button.pack(side=tk.LEFT, padx=5)
-
-        self.save_button = ttk.Button(action_frame, text=_("Save Selected"), command=self.save_selected)
-        self.save_button.pack(side=tk.LEFT, padx=5)
-
-        self.load_button = ttk.Button(action_frame, text=_("Load from file"), command=self.load_selected)
-        self.load_button.pack(side=tk.LEFT, padx=5)
-
-        self.remove_successful_var = tk.BooleanVar()
-        self.remove_successful_check = ttk.Checkbutton(action_frame, text=_("Remove successful from json"), variable=self.remove_successful_var)
-        self.remove_successful_check.pack(side=tk.LEFT, padx=5)
 
         self.clear_button = ttk.Button(action_frame, text=_("Clear All"), command=self.clear_all)
         self.clear_button.pack(side=tk.LEFT, padx=5)
@@ -281,7 +298,12 @@ class DownloaderGUI(tk.Tk):
     def change_language(self, *args):
         self.setup_translation()
         self.update_ui_texts()
-        self.save_language()
+        self.settings["language"] = self.current_language.get()
+        self.save_config()
+
+    def update_remove_successful(self, *args):
+        self.settings["remove_successful"] = self.remove_successful_var.get()
+        self.save_config()
 
     def update_ui_texts(self):
         self.title(_("Universal Downloader"))
@@ -291,9 +313,6 @@ class DownloaderGUI(tk.Tk):
         self.max_results_label.config(text=_("Max Results:"))
 
         self.download_button.config(text=_("Download Selected"))
-        self.save_button.config(text=_("Save Selected"))
-        self.load_button.config(text=_("Load from file"))
-        self.remove_successful_check.config(text=_("Remove successful from json"))
         self.clear_button.config(text=_("Clear All"))
         self.clear_not_selected_button.config(text=_("Clear Not Selected"))
         self.select_all_button.config(text=_("Select/Deselect All"))
@@ -305,6 +324,8 @@ class DownloaderGUI(tk.Tk):
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
 
 def main():
+    compile_mo_files()
+
     if not os.path.exists(JSON_FILE):
         open(JSON_FILE, 'w').close()
     

@@ -6,6 +6,12 @@ msgstr ""
 msgid "Universal Downloader"
 msgstr "Univerzální Stahovač"
 
+msgid "File"
+msgstr "Soubor"
+
+msgid "Settings"
+msgstr "Nastavení"
+
 msgid "Search:"
 msgstr "Hledat:"
 
@@ -104,3 +110,6 @@ msgstr "Vymazány všechny zobrazené soubory."
 
 msgid "Cleared not selected files."
 msgstr "Vymazány nevybrané soubory."
+
+msgid "Translation file not found!"
+msgstr "Překladový soubor nebyl nalezen!"
