@@ -1,6 +1,7 @@
 
 import os
 import json
+import time
 import gettext
 import threading
 import tkinter as tk
@@ -11,6 +12,7 @@ from main import download_folder, JSON_FILE
 
 CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
+TIME_OUT = 50
 
 class DownloaderGUI(tk.Tk):
     lang_codes = ["en", "cs"]
@@ -42,7 +44,8 @@ class DownloaderGUI(tk.Tk):
         try:
             lang = gettext.translation('universal_downloader', localedir='locales', languages=[lang_code])
             lang.install()
-            print_success(f"Translation loaded for {lang_code}.")
+            if DEBUG:
+                print_success(f"Translation loaded for {lang_code}.")
             _ = lang.gettext
         except Exception as e:
             print_error(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
@@ -214,6 +217,8 @@ class DownloaderGUI(tk.Tk):
             else:
                 successfull_files.append(link_2_file)
                 self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
+
+            time.sleep(TIME_OUT)
         
         self.log(_("Downloaded files: {}").format(len(successfull_files)), "success")
 

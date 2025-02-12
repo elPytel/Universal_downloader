@@ -8,12 +8,20 @@ Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci pou�
 pip install -r requirements.txt
 ```
 
+### Pod Linuxem
+Pro instalaci stačí spustit skript `install.sh`.
+
+```bash
+./install.sh
+```
+
 ## Použití v příkazové řádce
 
 ### Help
 ```bash
 python3 main.py --help
-usage: main.py [-h] [-s SEARCH] [-t {all,video,audio,archive,images}] [-T {relevance,most_downloaded,newest,biggest,smallest}] [-d] [-f FILE] [-F FOLDER] [-v] [-D] [-g]
+usage: main.py [-h] [-s SEARCH] [-t {all,video,audio,archive,images}] [-T {relevance,most_downloaded,newest,biggest,smallest}] [-d] [-f FILE] [-F FOLDER] [-n NUMBER]
+               [-v] [-D] [-g] [-G] [-r]
 
 Download files from internet.
 
@@ -29,9 +37,13 @@ options:
   -f FILE, --file FILE  File to download.
   -F FOLDER, --folder FOLDER
                         Folder to download to.
+  -n NUMBER, --number NUMBER
+                        Max number of files to search.
   -v, --verbose         Verbose mode.
   -D, --debug           Debug mode.
   -g, --tui             Start TUI.
+  -G, --gui             Start GUI.
+  -r, --remove          Remove downloaded files from the list.
 ```
 
 ### Vyhledání souborů
@@ -49,6 +61,11 @@ python3 main.py --download
 ```
 Tento příkaz projde obsah souboru `files.json` a stáhne všechny soubory, které jsou v něm uvedeny.
 
+```bash
+python3 main.py --download --remove
+```
+Projde soubory a pokud se poaří soubor stáhnout, tak i odstraní jeho záznam z `files.json`.
+
 ## Použití v GUI
 
 ```bash
@@ -60,13 +77,16 @@ Nebo:
 python3 main.py --gui
 ```
 
+Aplikace je přeložena do angličtiny a češtiny. Jazyk lze v aplikaci volně měnit.
+
 ### Vyhlédání souborů
 
 Do pole `Search` zadejte název souboru, který chcete stáhnout.
 - Vyberte případně **typ** souboru, a **způsob** vyhledání.
+
 Po stisknutí tlačítka `Search` se zobrazí seznam souborů, které odpovídají zadanému názvu.
 
-### Načtení odzkazů ze souboru
+### Načtení odkazů ze souboru
 
 Pokud již máte uložené vyhledávání v soboru `files.json`, můžete je načíst pomocí tlačítka `Load`.
 
@@ -78,7 +98,21 @@ Po vyhledání souborů je možné je uložit do souboru `files.json` pomocí tl
 > Uloží se pouze soubory, které jsou označeny.
 
 ### Stažení souborů
-Oznáčte soubory, které chcete stáhnout a stiskněte tlačítko `Download`.
+Označte soubory, které chcete stáhnout a stiskněte tlačítko `Download`.
+
+> [!tip]
+> Když zaškrtnete tlačítko `Remove`, tak se soubor odstraní ze seznamu po úspěšném stažení.
+
+## Pokročilé použití
+V grafickém režimu je možné vyhledat soubory ke stažení a následně je uložit do souboru `files.json`. Aplikaci pak můžte spustit v příkazové řádce a stáhnout soubory podle tohoto seznamu.
+
+```bash
+python3 main.py --download --remove
+```
+
+> [!note]
+> Aplikace tak může běžet na serveru, kde nemáte grafické rozhraní.
+> Stačí jen přesunout soubor `files.json` na server a spustit výše uvedený příkaz.
 
 ## Použití v TUI
 
