@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from typing import List
 from download import *
 from basic_colors import *
@@ -63,7 +64,7 @@ class Link_to_file:
         if os.path.exists(file_path):
             raise ValueError(f"File {self.title} already exists.")
 
-        response = download_page(self.link)
+        response = requests.get(self.link)
         save_binary_file(response, file_path)
     
     def download_with_progress(self, download_folder="."):

@@ -1,6 +1,5 @@
 import requests
 
-
 PAGE_FILE = "page.html"
 ENCODING="utf-8"
 
@@ -13,13 +12,13 @@ def download_page(url):
 
 def save_binary_file(response, file_path):
     """
-    Stáhne soubor z internetu a uloží jej do souboru.
+    Uloží data do binárního souboru.
     """
     with open(file_path, "wb") as file:
         file.write(response.content)
 
 def download_and_save_page(url, file_name=PAGE_FILE):
-    page = download_page(url)
+    page = requests.get(url)
     with open(file_name, "w", encoding=ENCODING) as file:
         file.write(page.text)
 

@@ -9,6 +9,7 @@ from tkinter import ttk
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
 from main import download_folder, JSON_FILE
+from download_page_search import InsufficientTimeoutError
 
 CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
@@ -40,6 +41,8 @@ class DownloaderGUI(tk.Tk):
         self.current_language = tk.StringVar(value=self.settings.get("language", DEFAULT_LANGUAGE))
         self.remove_successful_var = tk.BooleanVar(value=self.settings.get("remove_successful", False))
         self.remove_successful_var.trace_add("write", self.update_remove_successful)
+        self.add_files_with_failed_timeout_var = tk.BooleanVar(value=self.settings.get("add_files_with_failed_timeout", False))
+        self.add_files_with_failed_timeout_var.trace_add("write", self.update_add_files_with_failed_timeout)
         self.setup_translation()
         self.title(_("Universal Downloader"))
         self.geometry("800x600")
@@ -78,12 +81,13 @@ class DownloaderGUI(tk.Tk):
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label=_("Save Selected"), command=self.save_selected)
-        file_menu.add_command(label=_("Load from file"), command=self.load_selected)
+        file_menu.add_command(label=_("Load from file"), command=self.load_from_file)
         menubar.add_cascade(label=_("File"), menu=file_menu)
 
         # Settings menu
         settings_menu = tk.Menu(menubar, tearoff=0)
         settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
+        settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         lang_menu = tk.Menu(settings_menu, tearoff=0)
         for lang in self.lang_codes:
             lang_menu.add_radiobutton(label=lang, variable=self.current_language, value=lang, command=self.change_language)
@@ -194,8 +198,7 @@ class DownloaderGUI(tk.Tk):
         for i, link_2_file in enumerate(link_2_files):
             if max_results and i >= max_results:
                 break
-            self.check_vars.append(False)
-            self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+            self.add_uniqe_to_results([link_2_file])
             number_of_files = i + 1
             self.log(".", "info", end="")
         
@@ -212,8 +215,8 @@ class DownloaderGUI(tk.Tk):
         link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
 
         successfull_files = []
-        for link_2_file in link_2_files:
-            
+        while len(link_2_files) > 0:
+            link_2_file = link_2_files.pop(0)
             # test if file exists
             if os.path.exists(f"{download_folder}/{link_2_file.title}"):
                 self.log(_("File {} already exists.").format(link_2_file.title), "warning")
@@ -224,17 +227,35 @@ class DownloaderGUI(tk.Tk):
 
             link_2_file.download(download_folder)
 
-            # test file size > 1kb
-            file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
-            if (not compare_sizes(file_size, link_2_file.size, 20/100) and link_2_file.size != None) or (link_2_file.size == None and file_size < 1024):
+            # test downloaded file
+            try:
+                file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+                if Sdilej_downloader.test_downloaded_file(link_2_file, download_folder):
+                    successfull_files.append(link_2_file)
+                    self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
+                    self.remove_from_results([link_2_file])
+            except ValueError as e:
+                # Wrong file size
+                self.log(_("Error: {}").format(e), "error")
                 self.log(_("File {} was not downloaded correctly.").format(link_2_file.title), "error")
                 self.log(_("File size: {} expected: {}").format(file_size, link_2_file.size), "error")
                 os.remove(f"{download_folder}/{link_2_file.title}")
                 self.log(_("File {} was removed.").format(link_2_file.title), "info")
-            else:
-                successfull_files.append(link_2_file)
-                self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
-
+            except InsufficientTimeoutError as e:
+                # Timeout error
+                self.log(_("Error: {}").format(e), "error")
+                self.log(_("File {} was not downloaded at all.").format(link_2_file.title), "error")
+                os.remove(f"{download_folder}/{link_2_file.title}")
+                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                if self.add_files_with_failed_timeout_var.get():
+                    link_2_files.append(link_2_file)
+                    self.log(_("File {} was added back to the list.").format(link_2_file.title), "info")
+            except Exception as e:
+                # Other error
+                self.log(_("Error: {}").format(e), "error")
+                os.remove(f"{download_folder}/{link_2_file.title}")
+                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                
             time.sleep(TIME_OUT)
         
         self.log(_("Downloaded files: {}").format(len(successfull_files)), "success")
@@ -242,6 +263,37 @@ class DownloaderGUI(tk.Tk):
         if self.remove_successful_var.get():
             self.log(_("Removing successful downloads from the list..."), "info")
             remove_links_from_file(successfull_files, JSON_FILE)
+
+    def result_tree_2_link_2_files(self):
+        for item in self.results_tree.get_children():
+            _, title, link, size = self.results_tree.item(item)["values"]
+            yield Link_to_file(title, link, size)
+
+    def replace_results(self, link_2_files):
+        self.results_tree.delete(*self.results_tree.get_children())
+        self.check_vars = [False for _ in link_2_files]
+        for i, link_2_file in enumerate(link_2_files):
+            self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+
+    def add_uniqe_to_results(self, link_2_files):
+        """
+        TODO: fix this function to add only unique items
+        """
+        existing_links = {link_2_file.link for link_2_file in self.result_tree_2_link_2_files()}
+        
+        for link_2_file in link_2_files:
+            if link_2_file.link not in existing_links:
+                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link))
+                self.check_vars.append(False)
+                existing_links.add(link_2_file.link)
+
+    def remove_from_results(self, link_2_files):
+        for link_2_file in link_2_files:
+            for item in self.results_tree.get_children():
+                _, title, link, size = self.results_tree.item(item)["values"]
+                if link_2_file == Link_to_file(title, link, size):
+                    self.results_tree.delete(item)
+                    break
 
     def save_selected(self):
         self.log(_("Saving selected items..."), "info")
@@ -253,13 +305,10 @@ class DownloaderGUI(tk.Tk):
         
         self.log(_("Saved items: {}").format(len(link_2_files)), "success")
 
-    def load_selected(self):
+    def load_from_file(self):
         self.log(_("Loading selected items..."), "info")
         link_2_files = load_links_from_file(JSON_FILE)
-        self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = [False for _ in link_2_files]
-        for i, link_2_file in enumerate(link_2_files):
-            self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+        self.replace_results(link_2_files)
         self.log(_("Loaded items: {}").format(len(link_2_files)), "success")
 
     def clear_all(self):
@@ -303,6 +352,10 @@ class DownloaderGUI(tk.Tk):
 
     def update_remove_successful(self, *args):
         self.settings["remove_successful"] = self.remove_successful_var.get()
+        self.save_config()
+    
+    def update_add_files_with_failed_timeout(self, *args):
+        self.settings["add_files_with_failed_timeout"] = self.add_files_with_failed_timeout_var.get()
         self.save_config()
 
     def update_ui_texts(self):

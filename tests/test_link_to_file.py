@@ -115,6 +115,3 @@ def test_download(title, link, size):
         # Clean up: remove the downloaded file
         if os.path.exists(file_path):
             os.remove(file_path)
-        
-        # Ensure the file is deleted
-        assert not os.path.exists(file_path)

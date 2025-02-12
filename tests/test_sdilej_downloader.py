@@ -17,7 +17,7 @@ from sdilej_downloader import *
 ])
 def test_get_atributes_from_catalogue(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
-    assert str(get_atributes_from_catalogue(soup)) == str(link_2_file)
+    assert str(Sdilej_downloader.get_atributes_from_catalogue(soup)) == str(link_2_file)
 
 
 @pytest.mark.parametrize("page, link_2_file", [
@@ -31,7 +31,7 @@ def test_get_atributes_from_catalogue(page, link_2_file):
 ])
 def test_get_atributes_from_file_page(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
-    assert str(get_atributes_from_file_page(soup)) == str(link_2_file)
+    assert str(Sdilej_downloader.get_atributes_from_file_page(soup)) == str(link_2_file)
 
 
 @pytest.mark.parametrize("link_2_file", [
@@ -39,8 +39,8 @@ def test_get_atributes_from_file_page(page, link_2_file):
 ])
 def test_get_atributes_from_file_page_exception(link_2_file):
     with pytest.raises(ValueError):
-        download_page_content = parse_file_page(download_page(link_2_file.link))
-        get_atributes_from_file_page(download_page_content)
+        download_page_content = Sdilej_downloader.parse_file_page(download_page(link_2_file.link))
+        Sdilej_downloader.get_atributes_from_file_page(download_page_content)
 
 
 @pytest.mark.parametrize("prompt, file_type, url", [
@@ -57,4 +57,11 @@ def test_search(prompt, file_type, url):
 def test_is_valid_download_page(url, validity):
     page = download_page(url)
     print("Status code:", page.status_code)
-    assert is_valid_download_page(page) == validity
+    assert Sdilej_downloader.is_valid_download_page(page) == validity
+
+@pytest.mark.parametrize("data, validity", [
+    ("<script>top.location.href='https://sdilej.cz/free-stahovani';</script>", False),
+    ("<h1 class=\"red\">Stahování více souborů najednou</h1>", False)
+])
+def test_test_downloaded_data(data, validity):
+    assert Sdilej_downloader.test_downloaded_data(data) == validity

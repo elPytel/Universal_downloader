@@ -14,6 +14,12 @@ def remove_empty_lines(text) -> str:
 def any_text_coresponds_to(text, texts) -> bool:
     return any([t in text for t in texts])
 
+class InsufficientTimeoutError(Exception):
+    """Exception raised for insufficient timeout."""
+    def __init__(self, message="Timeout is too short."):
+        self.message = message
+        super().__init__(self.message)
+
 class Download_page_search:
     """
     Abstract class for searching download pages.
