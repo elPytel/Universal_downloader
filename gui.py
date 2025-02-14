@@ -1,7 +1,9 @@
 import os
+import sys
 import json
 import time
 import gettext
+import argparse
 import threading
 import subprocess
 import tkinter as tk
@@ -25,10 +27,20 @@ DOMAIN = 'universal_downloader'
 ICON_FILE = 'icon.png'
 ASSETS_DIR = 'assets'
 
+def get_resource_path(relative_path):
+    """
+    Get absolute path to resource, works for dev and for PyInstaller
+    """
+    if hasattr(sys, "_MEIPASS"):
+        # Cesta k dočasné složce při spuštění .exe
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 def compile_mo_files():
+    localedir = get_resource_path("locales")
     for lang in LANGUAGES.values():
-        po_file = os.path.join('locales', lang, 'LC_MESSAGES', DOMAIN + '.po')
-        mo_file = os.path.join('locales', lang, 'LC_MESSAGES', DOMAIN + '.mo')
+        po_file = os.path.join(localedir, lang, 'LC_MESSAGES', DOMAIN + '.po')
+        mo_file = os.path.join(localedir, lang, 'LC_MESSAGES', DOMAIN + '.mo')
         if os.path.exists(po_file):
             if not os.path.exists(mo_file) or os.path.getmtime(po_file) > os.path.getmtime(mo_file):
                 print(f"Compiling {po_file} to {mo_file}")
@@ -39,7 +51,7 @@ class DownloaderGUI(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        icon_path = os.path.join(ASSETS_DIR, "icon.png")
+        icon_path = get_resource_path(os.path.join(ASSETS_DIR, "icon.png"))
         if os.path.isfile(icon_path):
             icon = ImageTk.PhotoImage(file=icon_path)
             self.iconphoto(True, icon)
@@ -71,15 +83,16 @@ class DownloaderGUI(tk.Tk):
     def setup_translation(self, domain=DOMAIN):
         lang_code = self.current_language.get()
         global _
+        localedir = get_resource_path("locales")
         try:
-            lang = gettext.translation(domain, localedir='locales', languages=[lang_code])
+            lang = gettext.translation(domain, localedir=localedir, languages=[lang_code])
             lang.install()
             if DEBUG:
                 print_success(f"Translation loaded for {lang_code}.")
             _ = lang.gettext
         except Exception as e:
             print_error(f"Translation not found for {lang_code}, falling back to default. Error: {e}")
-            gettext.install(domain, localedir='locales')
+            gettext.install(domain, localedir=localedir)
             _ = gettext.gettext
 
     def create_widgets(self):
@@ -389,17 +402,22 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Link", text=_("Link"))
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
 
-def main():
-    compile_mo_files()
-
+def main():    
     if not os.path.exists(JSON_FILE):
         open(JSON_FILE, 'w').close()
     
-    if not os.path.exists("locales/cs/LC_MESSAGES/universal_downloader.mo"):
+    compile_mo_files()
+    localedir = get_resource_path("locales")
+    if not os.path.exists(os.path.join(localedir, "cs", "LC_MESSAGES", DOMAIN + ".mo")):
         print_error("Translation file not found!")
     
     app = DownloaderGUI()
     app.mainloop()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Download files from internet.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose mode.")
+    parser.add_argument("-D", "--debug", action="store_true", help="Debug mode.")
+    args = parser.parse_args()
+
     main()
