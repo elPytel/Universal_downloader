@@ -402,9 +402,12 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Link", text=_("Link"))
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
 
-def main():    
+def main():
     if not os.path.exists(JSON_FILE):
         open(JSON_FILE, 'w').close()
+    
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
     
     compile_mo_files()
     localedir = get_resource_path("locales")
