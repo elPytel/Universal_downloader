@@ -46,7 +46,6 @@ class DownloaderGUI(tk.Tk):
         else:
             print(f"Icon: '{icon_path}' not found.")
         
-        self.settings = {}
         self.settings = self.load_config()
         self.current_language = tk.StringVar(value=self.settings.get("language", DEFAULT_LANGUAGE))
         self.remove_successful_var = tk.BooleanVar(value=self.settings.get("remove_successful", False))
@@ -105,6 +104,7 @@ class DownloaderGUI(tk.Tk):
         settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         menubar.add_cascade(label=_("Settings"), menu=settings_menu)
 
+        # Search frame
         search_frame = ttk.Frame(self)
         search_frame.pack(pady=5, padx=5, fill=tk.X)
 
@@ -127,16 +127,17 @@ class DownloaderGUI(tk.Tk):
 
         self.max_results_entry = ttk.Entry(search_frame, width=5)
         self.max_results_entry.pack(side=tk.LEFT, padx=5)
-        self.max_results_entry.insert(0, "100")  # Default value
+        self.max_results_entry.insert(0, "100")
 
         self.search_button = ttk.Button(search_frame, text=_("Search"), command=self.start_search_thread)
         self.search_button.pack(side=tk.LEFT, padx=5)
 
+        # Action frame
         action_frame = ttk.Frame(self)
         action_frame.pack(pady=5, padx=5, fill=tk.X)
 
-        self.download_button = ttk.Button(action_frame, text=_("Download Selected"), command=self.start_download_thread)
-        self.download_button.pack(side=tk.LEFT, padx=5)
+        self.select_all_button = ttk.Button(action_frame, text=_("Select/Deselect All"), command=self.toggle_select_all)
+        self.select_all_button.pack(side=tk.LEFT, padx=5)
 
         self.clear_button = ttk.Button(action_frame, text=_("Clear All"), command=self.clear_all)
         self.clear_button.pack(side=tk.LEFT, padx=5)
@@ -144,9 +145,10 @@ class DownloaderGUI(tk.Tk):
         self.clear_not_selected_button = ttk.Button(action_frame, text=_("Clear Not Selected"), command=self.clear_not_selected)
         self.clear_not_selected_button.pack(side=tk.LEFT, padx=5)
 
-        self.select_all_button = ttk.Button(action_frame, text=_("Select/Deselect All"), command=self.toggle_select_all)
-        self.select_all_button.pack(side=tk.LEFT, padx=5)
+        self.download_button = ttk.Button(action_frame, text=_("Download Selected"), command=self.start_download_thread)
+        self.download_button.pack(side=tk.LEFT, padx=5)
 
+        # Results frame
         self.results_frame = ttk.Frame(self)
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
@@ -163,6 +165,7 @@ class DownloaderGUI(tk.Tk):
 
         self.results_tree.bind("<Double-1>", self.toggle_check)
 
+        # Log frame
         self.log_frame = ttk.Frame(self)
         self.log_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
@@ -191,8 +194,7 @@ class DownloaderGUI(tk.Tk):
         for i in range(len(self.check_vars)):
             self.check_vars[i] = select_all
             item = self.results_tree.get_children()[i]
-            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]))
-        self.log(_("Toggled select/deselect all."), "info")
+            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
 
     def start_search_thread(self):
         threading.Thread(target=self.search_files).start()
@@ -294,7 +296,7 @@ class DownloaderGUI(tk.Tk):
         
         for link_2_file in link_2_files:
             if link_2_file.link not in existing_links:
-                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link))
+                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(len(self.check_vars)),))
                 self.check_vars.append(False)
                 existing_links.add(link_2_file.link)
 

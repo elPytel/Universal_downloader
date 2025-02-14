@@ -45,3 +45,10 @@ class Download_page_search:
     
     def search(self, prompt, file_type="all", search_type="relevance"):
         raise NotImplementedError()
+    
+    @staticmethod
+    def test_downloaded_file(link_2_file, download_folder) -> bool:
+        """
+        Test if downloaded file is valid.
+        """
+        raise NotImplementedError()
