@@ -3,7 +3,7 @@ import pytest
 from main import *
 from link_to_file import Link_to_file
 from sdilej_downloader import *
-
+from download_page_search import InsufficientTimeoutError
 
 @pytest.mark.parametrize("page, link_2_file", [
     (
@@ -64,4 +64,5 @@ def test_is_valid_download_page(url, validity):
     ("<h1 class=\"red\">Stahování více souborů najednou</h1>", False)
 ])
 def test_test_downloaded_data(data, validity):
-    assert Sdilej_downloader.test_downloaded_data(data) == validity
+    with pytest.raises(InsufficientTimeoutError):
+        assert Sdilej_downloader.test_downloaded_data(data) == validity
