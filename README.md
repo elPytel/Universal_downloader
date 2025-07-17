@@ -1,5 +1,8 @@
 # Universal downloader
 
+>[!warning]
+> Aplikace nyní nefunguje zdůvodu placeného přístupu k webu **sdilej.cz**.
+
 Slouží pro stahování souborů z webu: [sdilej.cz](sdilej.cz).
 
 ## Instalace
