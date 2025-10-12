@@ -1,8 +1,8 @@
 # Universal downloader
 
 Slouží pro stahování souborů z webů: 
-- [datoid.cz](https://datoid.cz)
-- ~~[sdilej.cz](https://sdilej.cz)~~.
+- [datoid.cz](https://datoid.cz),
+- [sdilej.cz](https://sdilej.cz).
 
 ## Obsah
 - [Universal downloader](#universal-downloader)
@@ -22,6 +22,7 @@ Slouží pro stahování souborů z webů:
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
     - [Testování](#testování)
+    - [Dokumentace](#dokumentace)
 
 
 ## Instalace
@@ -160,4 +161,10 @@ pytest
 Pro spuštění jednoho testu použijte například:
 ```bash
 pytest tests/test_datoid_downloader.py
+```
+
+### Dokumentace
+Pro vygenerování dokumentace použijte:
+```bash
+pdoc .\gui.py .\main.py .\datoid_downloader.py .\sdilej_downloader.py .\download_page_search.py -o ./docs
 ```
