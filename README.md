@@ -1,9 +1,28 @@
 # Universal downloader
 
->[!warning]
-> Aplikace nyní nefunguje zdůvodu placeného přístupu k webu **sdilej.cz**.
+Slouží pro stahování souborů z webů: 
+- [datoid.cz](https://datoid.cz),
+- [sdilej.cz](https://sdilej.cz).
 
-Slouží pro stahování souborů z webu: [sdilej.cz](sdilej.cz).
+## Obsah
+- [Universal downloader](#universal-downloader)
+  - [Obsah](#obsah)
+  - [Instalace](#instalace)
+    - [Pod Linuxem](#pod-linuxem)
+  - [Použití v příkazové řádce](#použití-v-příkazové-řádce)
+    - [Help](#help)
+    - [Vyhledání souborů](#vyhledání-souborů)
+    - [Stažení souborů](#stažení-souborů)
+  - [Použití v GUI](#použití-v-gui)
+    - [Vyhlédání souborů](#vyhlédání-souborů)
+    - [Načtení odkazů ze souboru](#načtení-odkazů-ze-souboru)
+    - [Uložení odkazů do souboru](#uložení-odkazů-do-souboru)
+    - [Stažení souborů](#stažení-souborů-1)
+  - [Pokročilé použití](#pokročilé-použití)
+  - [Použití v TUI](#použití-v-tui)
+  - [Vývoj](#vývoj)
+    - [Testování](#testování)
+    - [Dokumentace](#dokumentace)
 
 ## Instalace
 Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci použijte následující příkaz:
@@ -129,3 +148,22 @@ python3 main.py --tui
 > PTG nefunguje pod OS Windows.
 
 [TUI](TUI.md)
+
+## Vývoj
+
+### Testování
+Pro spuštění testů použijte:
+```bash
+pytest
+```
+
+Pro spuštění jednoho testu použijte například:
+```bash
+pytest tests/test_datoid_downloader.py
+```
+
+### Dokumentace
+Pro vygenerování dokumentace použijte:
+```bash
+pdoc .\gui.py .\main.py .\datoid_downloader.py .\sdilej_downloader.py .\download_page_search.py -o ./docs
+```

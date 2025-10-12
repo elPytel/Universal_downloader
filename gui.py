@@ -12,7 +12,7 @@ from link_to_file import *
 from PIL import ImageTk
 from sdilej_downloader import Sdilej_downloader
 from main import download_folder, JSON_FILE
-from download_page_search import InsufficientTimeoutError
+from download_page_search import Download_page_search, InsufficientTimeoutError
 
 CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
@@ -128,11 +128,11 @@ class DownloaderGUI(tk.Tk):
         self.search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         self.file_type_var = tk.StringVar(value="all")
-        self.file_type_menu = ttk.OptionMenu(search_frame, self.file_type_var, "all", *Sdilej_downloader.file_types.keys())
+        self.file_type_menu = ttk.OptionMenu(search_frame, self.file_type_var, "all", *Download_page_search.file_types.keys())
         self.file_type_menu.pack(side=tk.LEFT, padx=5)
 
         self.search_type_var = tk.StringVar(value="relevance")
-        self.search_type_menu = ttk.OptionMenu(search_frame, self.search_type_var, "relevance", *Sdilej_downloader.search_types.keys())
+        self.search_type_menu = ttk.OptionMenu(search_frame, self.search_type_var, "relevance", *Download_page_search.search_types.keys())
         self.search_type_menu.pack(side=tk.LEFT, padx=5)
 
         self.max_results_label = ttk.Label(search_frame, text=_("Max Results:"))
@@ -254,6 +254,7 @@ class DownloaderGUI(tk.Tk):
             link_2_file.download(download_folder)
 
             # test downloaded file
+            file_size = None
             try:
                 file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
                 if Sdilej_downloader.test_downloaded_file(link_2_file, download_folder):

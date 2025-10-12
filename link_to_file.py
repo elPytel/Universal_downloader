@@ -36,7 +36,7 @@ def size_string_2_bytes(size : str) -> int:
         return int(float(size[:-1]))
     return int(float(size))
 
-def compare_sizes(size1 : str, size2 : str, precision=0.1) -> bool:
+def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
     """
     Compares two sizes of files.
     precision: 0.1 means that the sizes can differ by 10%.
