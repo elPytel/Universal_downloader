@@ -4,6 +4,9 @@ from basic_colors import *
 from download_page_search import *
 
 class Sdilej_downloader(Download_page_search):
+    """
+    Downloader from: sdilej.cz
+    """
     webpage = "https://sdilej.cz"
     
     def __init__(self):

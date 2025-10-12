@@ -11,6 +11,7 @@ from tkinter import ttk
 from link_to_file import *
 from PIL import ImageTk
 from sdilej_downloader import Sdilej_downloader
+from datoid_downloader import Datoid_downloader
 from main import download_folder, JSON_FILE
 from download_page_search import Download_page_search, InsufficientTimeoutError
 
@@ -22,6 +23,11 @@ LANGUAGES = {
     'EN': 'en',
     'CZ': 'cs'
 }
+
+SOURCES = [
+    {"name": "Sdilej.cz", "class": Sdilej_downloader},
+    {"name": "Datoid.cz", "class": Datoid_downloader},
+]
 
 DOMAIN = 'universal_downloader'
 ICON_FILE = 'icon.png'
@@ -64,6 +70,14 @@ class DownloaderGUI(tk.Tk):
         self.remove_successful_var.trace_add("write", self.update_remove_successful)
         self.add_files_with_failed_timeout_var = tk.BooleanVar(value=self.settings.get("add_files_with_failed_timeout", False))
         self.add_files_with_failed_timeout_var.trace_add("write", self.update_add_files_with_failed_timeout)
+
+        self.source_vars = []
+        for source in SOURCES:
+            var = tk.BooleanVar(value=self.settings.get(source["name"], True))
+            # Save changes to config on change
+            var.trace_add("write", lambda *args, name=source["name"], var=var: self.settings.update({name: var.get()}) or self.save_config())
+            self.source_vars.append(var)
+
         self.setup_translation()
         self.title(_("Universal Downloader"))
         self.geometry("800x600")
@@ -116,6 +130,18 @@ class DownloaderGUI(tk.Tk):
         settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
         settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         menubar.add_cascade(label=_("Settings"), menu=settings_menu)
+
+        # Zdroje menu
+        sources_menu = tk.Menu(menubar, tearoff=0)
+        for i, source in enumerate(SOURCES):
+            sources_menu.add_checkbutton(
+                label=source["name"],
+                variable=self.source_vars[i],
+                onvalue=True,
+                offvalue=False
+            )
+        menubar.add_cascade(label=_("Sources"), menu=sources_menu)
+
 
         # Search frame
         search_frame = ttk.Frame(self)

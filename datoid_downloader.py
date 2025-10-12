@@ -15,7 +15,7 @@ logging.basicConfig(
 
 class Datoid_downloader(Download_page_search):
     """
-    Downloader from: Datoid.cz
+    Downloader from: datoid.cz
     """
     webpage = "https://datoid.cz"
     
