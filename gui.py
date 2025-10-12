@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import queue
 import gettext
 import argparse
 import threading
@@ -236,30 +237,56 @@ class DownloaderGUI(tk.Tk):
             self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
 
     def start_search_thread(self):
-        threading.Thread(target=self.search_files).start()
-
-    def search_files(self):
-        self.log(_("Search initiated..."), "info", end="")
+        self.searching = True
+        self.result_queue = queue.Queue()
+        self.threads = []
+        self.link_2_files = []
+        self.max_results = int(self.max_results_entry.get())
         prompt = self.search_entry.get()
         file_type = self.file_type_var.get()
         search_type = self.search_type_var.get()
-        max_results = int(self.max_results_entry.get())
-
         selected_sources = [source["class"] for i, source in enumerate(SOURCES) if self.source_vars[i].get()]
+        self.stop_event = threading.Event() 
 
-        link_2_files = []
-        for source in selected_sources:
-            link_2_files.extend(source().search(prompt, file_type, search_type))
+        def search_source(source_class):
+            try:
+                results = source_class().search(prompt, file_type, search_type)
+                for r in results:
+                    if self.stop_event.is_set():
+                        break
+                    self.result_queue.put(r)
+            except Exception as e:
+                self.log(_("Error in source {}: {}").format(source_class.__name__, e), "error")
 
-        number_of_files = 0
-        for i, link_2_file in enumerate(link_2_files):
-            if max_results and i >= max_results:
-                break
+        for source_class in selected_sources:
+            t = threading.Thread(target=search_source, args=(source_class,))
+            t.start()
+            self.threads.append(t)
+
+        self.log(_("Search initiated..."), "info", end="")
+        self.after(100, self.process_search_queue)
+
+    def process_search_queue(self):
+        added = 0
+        while not self.result_queue.empty() and (not self.max_results or len(self.link_2_files) < self.max_results):
+            link_2_file = self.result_queue.get()
             self.add_uniqe_to_results([link_2_file])
-            number_of_files = i + 1
+            self.link_2_files.append(link_2_file)
             self.log(".", "info", end="")
-        
-        self.log(_("\nNumber of files found: {}").format(number_of_files), "success")
+            added += 1
+
+            # Pokud jsme dosáhli max_results, nastav stop_event
+            if self.max_results and len(self.link_2_files) >= self.max_results:
+                self.stop_event.set()
+
+        if (any(t.is_alive() for t in self.threads) or not self.result_queue.empty()) and not self.stop_event.is_set():
+            self.after(100, self.process_search_queue)
+        elif any(t.is_alive() for t in self.threads) or not self.result_queue.empty():
+            # Po dosažení max_results ještě necháme doběhnout frontu
+            self.after(100, self.process_search_queue)
+        else:
+            self.log(_("\nNumber of files found: {}").format(len(self.link_2_files)), "success")
+            self.searching = False
 
     def start_download_thread(self):
         threading.Thread(target=self.download_selected).start()
