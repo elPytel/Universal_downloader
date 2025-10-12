@@ -77,7 +77,7 @@ class Sdilej_downloader(Download_page_search):
         elif link_2_file.size != None and file_size < 1024:
             file = os.path.join(download_folder, link_2_file.title)
             data = open(file, "r", encoding='utf-8').read()
-            return Sdilej_downloader.test_downloaded_data(link_2_file, data)
+            return Sdilej_downloader.test_downloaded_data(data)
         elif link_2_file.size != None and not compare_sizes(file_size, link_2_file.size, 20/100):
             raise ValueError("ERROR: File size does not match.")
         return True
@@ -121,10 +121,11 @@ class Sdilej_downloader(Download_page_search):
             return None
         content = remove_style(content)
         for videobox in content.find_all(class_="videobox-desc"):
+            catalogue_file = None
             try:
                 catalogue_file = Sdilej_downloader.get_atributes_from_catalogue(videobox)
                 download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.link))
                 link_2_file = Sdilej_downloader.get_atributes_from_file_page(download_page_content)
                 yield link_2_file
             except ValueError as e:
-                print_error(str(e) + " for file: " + catalogue_file.title, False)
+                print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)

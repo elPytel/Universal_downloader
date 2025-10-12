@@ -33,8 +33,8 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description="Download files from internet.")
     parser.add_argument("-s", "--search", type=str, help="Search for files.")
-    parser.add_argument("-t", "--file-type", type=str, choices=Download_page_search().file_types.keys(), help="Type of files to search for.")
-    parser.add_argument("-T", "--search-type", type=str, choices=Download_page_search().search_types.keys(), help="Search format.")
+    parser.add_argument("-t", "--file-type", type=str, choices=Download_page_search.file_types.keys(), help="Type of files to search for.")
+    parser.add_argument("-T", "--search-type", type=str, choices=Download_page_search.search_types.keys(), help="Search format.")
     parser.add_argument("-d", "--download", action="store_true", help="Download the found files.")
     parser.add_argument("-f", "--file", type=str, help="File to download.")
     parser.add_argument("-F", "--folder", type=str, help="Folder to download to.")

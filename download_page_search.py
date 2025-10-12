@@ -1,3 +1,4 @@
+from typing import Any
 import bs4
 
 def remove_style(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
@@ -8,8 +9,10 @@ def remove_style(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
         style.decompose()
     return soup
 
-def remove_empty_lines(text) -> str:
-    return "\n".join([line for line in text.split("\n") if line.strip() != ""])
+def remove_empty_lines(text: Any) -> str:
+    if isinstance(text, str):
+        return "\n".join([line for line in text.split("\n") if line.strip() != ""])
+    return ""
 
 def any_text_coresponds_to(text, texts) -> bool:
     return any([t in text for t in texts])
@@ -41,7 +44,7 @@ class Download_page_search:
     }
         
     def __init__(self):
-        pass
+        raise NotImplementedError()
     
     def search(self, prompt, file_type="all", search_type="relevance"):
         raise NotImplementedError()
