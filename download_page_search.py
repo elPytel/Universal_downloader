@@ -41,7 +41,7 @@ class Download_page_search:
     }
         
     def __init__(self):
-        raise NotImplementedError()
+        pass
     
     def search(self, prompt, file_type="all", search_type="relevance"):
         raise NotImplementedError()

@@ -12,6 +12,8 @@ import threading
 from time import sleep
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
+from datoid_downloader import Datoid_downloader
+from download_page_search import Download_page_search
 
 JSON_FILE = "files.json"
 FAILED_FILES = "failed_files.json"
@@ -31,8 +33,8 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description="Download files from internet.")
     parser.add_argument("-s", "--search", type=str, help="Search for files.")
-    parser.add_argument("-t", "--file-type", type=str, choices=Sdilej_downloader().file_types.keys(), help="Type of files to search for.")
-    parser.add_argument("-T", "--search-type", type=str, choices=Sdilej_downloader().search_types.keys(), help="Search format.")
+    parser.add_argument("-t", "--file-type", type=str, choices=Download_page_search().file_types.keys(), help="Type of files to search for.")
+    parser.add_argument("-T", "--search-type", type=str, choices=Download_page_search().search_types.keys(), help="Search format.")
     parser.add_argument("-d", "--download", action="store_true", help="Download the found files.")
     parser.add_argument("-f", "--file", type=str, help="File to download.")
     parser.add_argument("-F", "--folder", type=str, help="Folder to download to.")
@@ -84,7 +86,7 @@ if __name__ == "__main__":
         search_type = args.search_type if args.search_type else "relevance"
                 
         link_2_files = []
-        for i, link_2_file in enumerate(Sdilej_downloader().search(prompt, file_type, search_type)):
+        for i, link_2_file in enumerate(Datoid_downloader().search(prompt, file_type, search_type)):
             if args.number and i >= args.number:
                 break
             if DEBUG:
