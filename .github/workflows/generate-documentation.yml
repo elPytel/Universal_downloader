@@ -27,7 +27,7 @@ jobs:
 
       # ADJUST THIS: install all dependencies (including pdoc)
       - run: pip install -r requirements.txt
-      - run: pdoc .\gui.py .\main.py .\datoid_downloader.py .\sdilej_downloader.py .\download_page_search.py -o ./docs
+      - run: pdoc ./gui.py ./main.py ./datoid_downloader.py ./sdilej_downloader.py ./download_page_search.py -o ./docs
 
       - uses: actions/upload-pages-artifact@v4
         with:
