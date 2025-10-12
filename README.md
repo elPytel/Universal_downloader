@@ -18,9 +18,11 @@ Slouží pro stahování souborů z webů:
     - [Načtení odkazů ze souboru](#načtení-odkazů-ze-souboru)
     - [Uložení odkazů do souboru](#uložení-odkazů-do-souboru)
     - [Stažení souborů](#stažení-souborů-1)
+    - [Výběr zdrojů pro stahování](#výběr-zdrojů-pro-stahování)
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
+    - [TODO:](#todo)
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
 
@@ -127,6 +129,11 @@ Označte soubory, které chcete stáhnout a stiskněte tlačítko `Download`.
 > [!tip]
 > Když zaškrtnete tlačítko `Remove`, tak se soubor odstraní ze seznamu po úspěšném stažení.
 
+### Výběr zdrojů pro stahování
+V menu `Sources` je možné vybrat, ze kterých zdrojů se mají soubory vyhledávat a stahovat.
+
+![Multi Source](assets/multi_source.png)
+
 ## Pokročilé použití
 V grafickém režimu je možné vyhledat soubory ke stažení a následně je uložit do souboru `files.json`. Aplikaci pak můžte spustit v příkazové řádce a stáhnout soubory podle tohoto seznamu.
 
@@ -150,6 +157,9 @@ python3 main.py --tui
 [TUI](TUI.md)
 
 ## Vývoj
+
+### TODO:
+- [ ] prehraj.to
 
 ### Testování
 Pro spuštění testů použijte:

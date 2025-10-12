@@ -244,8 +244,13 @@ class DownloaderGUI(tk.Tk):
         file_type = self.file_type_var.get()
         search_type = self.search_type_var.get()
         max_results = int(self.max_results_entry.get())
-        
-        link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
+
+        selected_sources = [source["class"] for i, source in enumerate(SOURCES) if self.source_vars[i].get()]
+
+        link_2_files = []
+        for source in selected_sources:
+            link_2_files.extend(source().search(prompt, file_type, search_type))
+
         number_of_files = 0
         for i, link_2_file in enumerate(link_2_files):
             if max_results and i >= max_results:
