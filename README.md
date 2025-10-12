@@ -24,7 +24,6 @@ Slouží pro stahování souborů z webů:
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
 
-
 ## Instalace
 Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci použijte následující příkaz:
 ```bash
