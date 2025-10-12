@@ -20,6 +20,8 @@ Slouží pro stahování souborů z webů:
     - [Stažení souborů](#stažení-souborů-1)
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
+  - [Vývoj](#vývoj)
+    - [Testování](#testování)
 
 
 ## Instalace
@@ -146,3 +148,16 @@ python3 main.py --tui
 > PTG nefunguje pod OS Windows.
 
 [TUI](TUI.md)
+
+## Vývoj
+
+### Testování
+Pro spuštění testů použijte:
+```bash
+pytest
+```
+
+Pro spuštění jednoho testu použijte například:
+```bash
+pytest tests/test_datoid_downloader.py
+```
