@@ -159,7 +159,11 @@ python3 main.py --tui
 ## Vývoj
 
 ### TODO:
-- [ ] prehraj.to
+
+- Integrace s dalšími weby:
+  - [ ] datoid.cz,
+  - [x] sdilej.cz,
+  - [ ] prehraj.to
 
 ### Testování
 Pro spuštění testů použijte:
@@ -182,3 +186,5 @@ Linux:
 ```bash
 pdoc ./gui.py ./main.py ./datoid_downloader.py ./sdilej_downloader.py ./download_page_search.py -o ./docs
 ```
+
+Je nastavená github actions pro automatické generování dokumentace při pushu do mainu a její nahrání na GitHub pages [zde](https://elpytel.github.io/Universal_downloader/).

@@ -24,6 +24,9 @@ msgstr "Maximální počet výsledků:"
 msgid "Search"
 msgstr "Hledat"
 
+msgid "Sources"
+msgstr "Zdroje"
+
 msgid "Download Selected"
 msgstr "Stáhnout vybrané"
 
