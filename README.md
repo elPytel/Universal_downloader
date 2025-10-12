@@ -165,6 +165,11 @@ pytest tests/test_datoid_downloader.py
 
 ### Dokumentace
 Pro vygenerování dokumentace použijte:
+```cmd
+pdoc .\gui.py .\main.py .\datoid_downloader.py -o ./docs
+```
+
+Linux:
 ```bash
-pdoc .\gui.py .\main.py .\datoid_downloader.py .\sdilej_downloader.py .\download_page_search.py -o ./docs
+pdoc ./gui.py ./main.py ./datoid_downloader.py ./sdilej_downloader.py ./download_page_search.py -o ./docs
 ```

@@ -14,12 +14,19 @@ logging.basicConfig(
 )
 
 class Datoid_downloader(Download_page_search):
+    """
+    Downloader from: Datoid.cz
+    """
     webpage = "https://datoid.cz"
     
     def __init__(self):
         pass
 
-    def search(self, prompt, file_type="all", search_type="relevance"):
+    def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
+        """
+        Search for files on Datoid.cz.
+        Returns a generator of Link_to_file objects.
+        """
         if prompt is None:
             return None
         url = Datoid_downloader.generate_search_url(prompt, file_type, search_type)
@@ -29,7 +36,7 @@ class Datoid_downloader(Download_page_search):
     @staticmethod
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
         """
-        generate url from input
+        Generate search URL from input atributes.
 
         TODO: -{Datoid_downloader.search_types[search_type]}
         """
@@ -121,7 +128,7 @@ class Datoid_downloader(Download_page_search):
             raise ValueError(f"Request failed with status code {response.status_code}")
 
     @staticmethod
-    def parse_catalogue(page):
+    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
         """
         Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
 

@@ -9,7 +9,7 @@ class Sdilej_downloader(Download_page_search):
     def __init__(self):
         pass
     
-    def search(self, prompt, file_type="all", search_type="relevance"):
+    def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
         if prompt is None:
             return None
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
@@ -109,7 +109,7 @@ class Sdilej_downloader(Download_page_search):
         return content
 
     @staticmethod
-    def parse_catalogue(page):
+    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
         """
         Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
 
