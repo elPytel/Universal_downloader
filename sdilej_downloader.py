@@ -1,7 +1,9 @@
+from __future__ import annotations
 import bs4
-from link_to_file import *
+from download import *
 from basic_colors import *
 from download_page_search import *
+from link_to_file import Link_to_file
 
 class Sdilej_downloader(Download_page_search):
     """
@@ -32,7 +34,7 @@ class Sdilej_downloader(Download_page_search):
             link = soup.find("a").get("href")
             title = soup.find("a").get("title")
             size = soup.find_all("p")[1].text
-            link_2_file = Link_to_file(title, link, size)
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader())
         except Exception as e:
             raise ValueError("ERROR: unable to parse atributes." + str(e))
         return link_2_file
@@ -43,10 +45,24 @@ class Sdilej_downloader(Download_page_search):
             title = soup.find("h1").text
             size = soup.find("b").next_sibling.replace("|", "").strip()
             link = Sdilej_downloader.webpage+str(soup.find("a", class_="btn btn-danger").get("href"))
-            link_2_file = Link_to_file(title, link, size)
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader())
         except Exception as e:
-            raise ValueError("ERROR: unable to parse atributes." + str(e))
+            raise ValueError("Download button not found on detail page." + str(e))
         return link_2_file
+    
+    @staticmethod
+    def get_download_link_from_detail(detail_url: str) -> str:
+        """
+        Získá přímý odkaz ke stažení ze stránky s detailem souboru na sdilej.cz.
+        """
+        page = download_page(detail_url)
+        soup = bs4.BeautifulSoup(page.text, "html.parser")
+        # Najdi tlačítko pro stažení
+        download_btn = soup.find("a", class_="btn btn-danger")
+        if not download_btn:
+            raise ValueError("Download button not found on detail page.")
+        download_link = Sdilej_downloader.webpage + str(download_btn.get("href"))
+        return download_link
 
     @staticmethod
     def is_valid_download_page(page) -> bool:
@@ -67,9 +83,10 @@ class Sdilej_downloader(Download_page_search):
         
         soup = remove_style(soup)
         page_txt = soup.find("div", class_="content")
-        text = remove_empty_lines(page_txt.text)
-        if page_txt is not None and any_text_coresponds_to(text, invalid_texts):
-            return False
+        if page_txt is not None:
+            text = remove_empty_lines(page_txt.text)
+            if any_text_coresponds_to(text, invalid_texts):
+                return False
         return True
     
     @staticmethod
@@ -127,7 +144,7 @@ class Sdilej_downloader(Download_page_search):
             catalogue_file = None
             try:
                 catalogue_file = Sdilej_downloader.get_atributes_from_catalogue(videobox)
-                download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.link))
+                download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.detail_url))
                 link_2_file = Sdilej_downloader.get_atributes_from_file_page(download_page_content)
                 yield link_2_file
             except ValueError as e:

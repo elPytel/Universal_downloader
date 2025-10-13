@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from main import *
 from link_to_file import Link_to_file
+from sdilej_downloader import Sdilej_downloader
 
 
 @pytest.mark.parametrize("lines, link_2_files", [
@@ -18,15 +19,15 @@ from link_to_file import Link_to_file
 """,
         (
             None,
-            Link_to_file("Karel Čapek - Apokryfy (2008).mp3", "https://sdilej.cz/free/index.php?id=28238129", "114.4 MB"),
-            Link_to_file("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", "https://sdilej.cz/free/index.php?id=29079872", "175.2 MB"),
-            Link_to_file("MLUVENE SLOVO Capek Karel Tovarna na absolutno.mp3", "https://sdilej.cz/free/index.php?id=29271736", "175.2 MB"),
+            Link_to_file("Karel Čapek - Apokryfy (2008).mp3", "https://sdilej.cz/free/index.php?id=28238129", "114.4 MB", Sdilej_downloader()),
+            Link_to_file("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", "https://sdilej.cz/free/index.php?id=29079872", "175.2 MB", Sdilej_downloader()),
+            Link_to_file("MLUVENE SLOVO Capek Karel Tovarna na absolutno.mp3", "https://sdilej.cz/free/index.php?id=29271736", "175.2 MB", Sdilej_downloader()),
             None
         )
     )
 ])
 def test_from_json(lines, link_2_files):
-    link_2_file = Link_to_file("title", "link", "size")
+    link_2_file = Link_to_file("title", "link", "size", Sdilej_downloader())
     print(lines)
     for i, line in enumerate(lines.split("\n")):
         print("Index:", i)
@@ -42,19 +43,19 @@ def test_from_json(lines, link_2_files):
 @pytest.mark.parametrize("old_links, new_links, result", [
     (
         [
-            Link_to_file("A", "link", "size"),
-            Link_to_file("title", "link", "size"),
-            Link_to_file("title", "link", "size")
+            Link_to_file("A", "link", "size", Sdilej_downloader()),
+            Link_to_file("title", "link", "size", Sdilej_downloader()),
+            Link_to_file("title", "link", "size", Sdilej_downloader())
         ],
         [
-            Link_to_file("B", "link", "size"),
-            Link_to_file("title", "link", "size"),
-            Link_to_file("title", "link", "size")
+            Link_to_file("B", "link", "size", Sdilej_downloader()),
+            Link_to_file("title", "link", "size", Sdilej_downloader()),
+            Link_to_file("title", "link", "size", Sdilej_downloader())
         ],
         [
-            Link_to_file("A", "link", "size"),
-            Link_to_file("B", "link", "size"),
-            Link_to_file("title", "link", "size")
+            Link_to_file("A", "link", "size", Sdilej_downloader()),
+            Link_to_file("B", "link", "size", Sdilej_downloader()),
+            Link_to_file("title", "link", "size", Sdilej_downloader())
         ]
     )
 ])
@@ -70,7 +71,7 @@ def test_add_links_to_list(old_links, new_links, result):
         assert link == result[i]
 
 def test_server_name():
-    link_2_file = Link_to_file("title", "https://sdilej.cz/free/index.php?id=28238129", "size")
+    link_2_file = Link_to_file("title", "https://sdilej.cz/free/index.php?id=28238129", "size", Sdilej_downloader())
     assert link_2_file.server_name() == "sdilej.cz"
 
 @pytest.mark.parametrize("size, value", [
@@ -91,7 +92,7 @@ def test_size_string_2_bytes(size, value):
 )]
 )
 def test_download(title, link, size):
-    link_2_file = Link_to_file(title, link, size)
+    link_2_file = Link_to_file(title, link, size, Sdilej_downloader())
     download_folder = "download"
     
     # Ensure the download folder exists

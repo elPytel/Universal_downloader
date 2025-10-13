@@ -3,10 +3,11 @@ import pytest
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import bs4
 
-from main import *
+from download import *
 from link_to_file import Link_to_file
-from sdilej_downloader import *
+from sdilej_downloader import Sdilej_downloader
 from download_page_search import InsufficientTimeoutError
 
 @pytest.mark.parametrize("page, link_2_file", [
@@ -17,7 +18,7 @@ from download_page_search import InsufficientTimeoutError
 <p>682MB</p>
 </div>
 """,
-        Link_to_file("Pratchett, Terry - Uzasna Zemeplocha 05 - Magicky prazdroj - (Audiokniha) rar", "https://toplinktracker.com/?x=f4901bb6fb15cbafd69eeefexcwyexxf7a27ab08d4bcabtyiiyetybba38bc4d48ed59c9e12ec49182&y=a3ea680a4eab4eaa45b24a4464f71ba1b404f845c72e86a6", "682MB"))
+        Link_to_file("Pratchett, Terry - Uzasna Zemeplocha 05 - Magicky prazdroj - (Audiokniha) rar", "https://toplinktracker.com/?x=f4901bb6fb15cbafd69eeefexcwyexxf7a27ab08d4bcabtyiiyetybba38bc4d48ed59c9e12ec49182&y=a3ea680a4eab4eaa45b24a4464f71ba1b404f845c72e86a6", "682MB", Sdilej_downloader()))
 ])
 def test_get_atributes_from_catalogue(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
@@ -31,7 +32,7 @@ def test_get_atributes_from_catalogue(page, link_2_file):
 <b>Velikost:</b> 63.3 MB <br/>
 <a class="btn btn-danger" href="/free/index.php?id=11038881" onclick="showModalForFreeUsers();;countFbSlow();">Stáhnout zdarma</a>
 """,
-        (Link_to_file("christie agatha - krysy.mp3", "https://sdilej.cz/free/index.php?id=11038881", "63.3 MB")))
+        (Link_to_file("christie agatha - krysy.mp3", "https://sdilej.cz/free/index.php?id=11038881", "63.3 MB", Sdilej_downloader())))
 ])
 def test_get_atributes_from_file_page(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
@@ -39,11 +40,11 @@ def test_get_atributes_from_file_page(page, link_2_file):
 
 
 @pytest.mark.parametrize("link_2_file", [
-    (Link_to_file("Sergey Nevone &", "https://toplinktracker.com/?x=8db963822a1a9a41d02d453eycyrxby9eb2f1aab920b1ctyiibhhmyh1bde26920e9896507d1c738bf&y=5fa464601cc3c8a488451222d1d4660f91aa93cb114187a3", "0 / Délka: /img/transparent.png"))
+    (Link_to_file("Sergey Nevone &", "https://toplinktracker.com/?x=8db963822a1a9a41d02d453eycyrxby9eb2f1aab920b1ctyiibhhmyh1bde26920e9896507d1c738bf&y=5fa464601cc3c8a488451222d1d4660f91aa93cb114187a3", "0 / Délka: /img/transparent.png", Sdilej_downloader()))
 ])
 def test_get_atributes_from_file_page_exception(link_2_file):
     with pytest.raises(ValueError):
-        download_page_content = Sdilej_downloader.parse_file_page(download_page(link_2_file.link))
+        download_page_content = Sdilej_downloader.parse_file_page(download_page(link_2_file.detail_url))
         Sdilej_downloader.get_atributes_from_file_page(download_page_content)
 
 

@@ -1,10 +1,9 @@
 import pytest
-
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from main import *
+import bs4
 from link_to_file import Link_to_file
 from datoid_downloader import *
 from download_page_search import InsufficientTimeoutError
@@ -34,7 +33,7 @@ from download_page_search import InsufficientTimeoutError
     </a>
 </li>
 """,
-        Link_to_file("Krakatit - Capek, Karel.epub", "https://datoid.cz/AJSgV7/krakatit-capek-karel-epub", "230.4 kB"))
+        Link_to_file("Krakatit - Capek, Karel.epub", "https://datoid.cz/AJSgV7/krakatit-capek-karel-epub", "230.4 kB", Datoid_downloader()))
 ])
 def test_get_atributes_from_catalogue(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
@@ -83,7 +82,7 @@ def test_get_atributes_from_catalogue(page, link_2_file):
             </p>
 </div>
 """,
-        (Link_to_file("Krakatit - Capek, Karel.epub", "https://datoid.cz/f/AJSgV7/krakatit-capek-karel-epub", "230.44 kB")))
+        (Link_to_file("Krakatit - Capek, Karel.epub", "https://datoid.cz/f/AJSgV7/krakatit-capek-karel-epub", "230.44 kB", Datoid_downloader())))
 ])
 def test_get_atributes_from_file_page(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")

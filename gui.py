@@ -26,8 +26,8 @@ LANGUAGES = {
 }
 
 SOURCES = [
-    {"name": "Sdilej.cz", "class": Sdilej_downloader},
-    {"name": "Datoid.cz", "class": Datoid_downloader},
+    {"name": "Sdilej.cz", "class": Sdilej_downloader, "timeout": TIME_OUT},
+    {"name": "Datoid.cz", "class": Datoid_downloader, "timeout": TIME_OUT},
 ]
 
 DOMAIN = 'universal_downloader'
@@ -270,7 +270,7 @@ class DownloaderGUI(tk.Tk):
         added = 0
         while not self.result_queue.empty() and (not self.max_results or len(self.link_2_files) < self.max_results):
             link_2_file = self.result_queue.get()
-            self.add_uniqe_to_results([link_2_file])
+            self.add_unique_to_results([link_2_file])
             self.link_2_files.append(link_2_file)
             self.log(".", "info", end="")
             added += 1
@@ -360,17 +360,17 @@ class DownloaderGUI(tk.Tk):
         for i, link_2_file in enumerate(link_2_files):
             self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
 
-    def add_uniqe_to_results(self, link_2_files):
+    def add_unique_to_results(self, link_2_files):
         """
         TODO: fix this function to add only unique items
         """
-        existing_links = {link_2_file.link for link_2_file in self.result_tree_2_link_2_files()}
+        existing_links = {link_2_file.detail_url for link_2_file in self.result_tree_2_link_2_files()}
         
         for link_2_file in link_2_files:
-            if link_2_file.link not in existing_links:
-                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(len(self.check_vars)),))
+            if link_2_file.detail_url not in existing_links:
+                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url), tags=(str(len(self.check_vars)),))
                 self.check_vars.append(False)
-                existing_links.add(link_2_file.link)
+                existing_links.add(link_2_file.detail_url)
 
     def remove_from_results(self, link_2_files):
         for link_2_file in link_2_files:

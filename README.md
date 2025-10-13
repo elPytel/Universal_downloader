@@ -7,7 +7,7 @@ Slouží pro stahování souborů z webů:
 ## Obsah
 - [Universal downloader](#universal-downloader)
   - [Obsah](#obsah)
-  - [Instalace](#instalace)
+  - [Instalace závislostí](#instalace-závislostí)
     - [Pod Linuxem](#pod-linuxem)
   - [Použití v příkazové řádce](#použití-v-příkazové-řádce)
     - [Help](#help)
@@ -23,10 +23,11 @@ Slouží pro stahování souborů z webů:
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
     - [TODO:](#todo)
+    - [Jak sestavit exe soubor](#jak-sestavit-exe-soubor)
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
 
-## Instalace
+## Instalace závislostí
 Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci použijte následující příkaz:
 ```bash
 pip install -r requirements.txt
@@ -164,6 +165,40 @@ python3 main.py --tui
   - [ ] datoid.cz,
   - [x] sdilej.cz,
   - [ ] prehraj.to
+
+### Jak sestavit exe soubor
+Pro sestavení exe souboru použijte:
+- Windows: `build.bat`
+- Linux: `build.sh`
+
+Obsah skriptu `build.sh`:
+```bash
+#!/bin/bash
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Build the application using pyinstaller
+pyinstaller --onefile --windowed \
+    --icon=assets/icon.ico \
+    --add-data "assets/icon.png:assets" \
+    --add-data "locales:locales" \
+    --name universal_downloader \
+    gui.py
+
+# Deactivate the virtual environment
+deactivate
+echo "Done."
+```
 
 ### Testování
 Pro spuštění testů použijte:

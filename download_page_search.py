@@ -1,8 +1,10 @@
-from typing import Any, Generator
-from link_to_file import Link_to_file
+from __future__ import annotations
+import os
 import bs4
+from download import *
+from typing import Any, Generator
 
-def remove_style(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
+def remove_style(soup: bs4.BeautifulSoup | bs4.Tag) -> bs4.BeautifulSoup | bs4.Tag:
     """
     Removes everything between <style>...</style> tags from the content.
     """
@@ -55,7 +57,7 @@ class Download_page_search:
     def __init__(self):
         raise NotImplementedError()
     
-    def search(self, prompt, file_type="all", search_type="relevance") -> Generator[Link_to_file, None, None]:
+    def search(self, prompt, file_type="all", search_type="relevance") -> Generator["Link_to_file", None, None]:
         """
         Search for files on the website.
         """
@@ -70,14 +72,26 @@ class Download_page_search:
     
     @staticmethod
     def test_downloaded_file(link_2_file, download_folder) -> bool:
-        """
-        Test if downloaded file is valid.
-        """
-        raise NotImplementedError()
+        from link_to_file import compare_sizes
+        
+        file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+        if file_size == 0:
+            raise ValueError("ERROR: File is empty.")
+        elif link_2_file.size != None and not compare_sizes(file_size, link_2_file.size, 20/100):
+            raise ValueError("ERROR: File size does not match.")
+        return True
     
     @staticmethod
-    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
+    def parse_catalogue(page) -> Generator["Link_to_file", None, None]:
         """
         Parse the catalogue page and yield Link_to_file objects.
         """
         raise NotImplementedError()
+    
+    @staticmethod
+    def get_download_link_from_detail(detail_url: str) -> str:
+        """
+        Get the direct download link from the detail page URL.
+        """
+        raise NotImplementedError()
+        
