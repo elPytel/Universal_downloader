@@ -60,7 +60,7 @@ class DownloaderGUI(tk.Tk):
         super().__init__()
         icon_path = get_resource_path(os.path.join(ASSETS_DIR, "icon.png"))
         if os.path.isfile(icon_path):
-            icon = ImageTk.PhotoImage(file=icon_path)
+            icon = tk.PhotoImage(file=icon_path)
             self.iconphoto(True, icon)
         else:
             print(f"Icon: '{icon_path}' not found.")
@@ -373,7 +373,7 @@ class DownloaderGUI(tk.Tk):
                 yield l2f
             else:
                 self.log(_("Warning: Link not found in map, creating new Link_to_file object."), "warning")
-                yield Link_to_file(title, link, size) # Fallback, should not happen
+                yield Link_to_file(title, link, size, Download_page_search) # Fallback, should not happen
 
     def replace_results(self, link_2_files):
         """

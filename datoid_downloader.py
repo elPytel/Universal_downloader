@@ -28,8 +28,8 @@ class Datoid_downloader(Download_page_search):
         Search for files on Datoid.cz.
         Returns a generator of Link_to_file objects.
         """
-        if prompt is None:
-            return None
+        if prompt is None or prompt.strip() == "":
+            raise ValueError("Prompt cannot be empty.")
         url = Datoid_downloader.generate_search_url(prompt, file_type, search_type)
         page = download_page(url)
         return Datoid_downloader.parse_catalogue(page)

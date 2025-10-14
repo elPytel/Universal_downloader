@@ -52,7 +52,7 @@ def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
     return size1 * (1 - precision) < size2 < size1 * (1 + precision)
 
 class Link_to_file:
-    def __init__(self, title, detail_url, size, source_class: type[Download_page_search] = None):
+    def __init__(self, title, detail_url, size, source_class: type[Download_page_search]):
         self.title = title
         self.detail_url = detail_url
         self.size = size

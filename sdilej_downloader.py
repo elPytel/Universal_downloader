@@ -15,8 +15,8 @@ class Sdilej_downloader(Download_page_search):
         pass
     
     def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
-        if prompt is None:
-            return None
+        if prompt is None or prompt.strip() == "":
+            raise ValueError("Prompt cannot be empty.")
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
         page = download_page(url)
         return Sdilej_downloader.parse_catalogue(page)
