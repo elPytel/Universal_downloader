@@ -52,17 +52,17 @@ def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
     return size1 * (1 - precision) < size2 < size1 * (1 + precision)
 
 class Link_to_file:
-    def __init__(self, title, detail_url, size, source_class: Download_page_search = None):
+    def __init__(self, title, detail_url, size, source_class: type[Download_page_search] = None):
         self.title = title
         self.detail_url = detail_url
         self.size = size
-        self.Source_class = source_class
+        self.source_class = source_class
     
     def get_download_link(self) -> str:
         """
         Get the direct download link from the detail page URL.
         """
-        return self.Source_class.get_download_link_from_detail(self.detail_url)
+        return self.source_class.get_download_link_from_detail(self.detail_url)
 
     def download(self, download_folder="."):
         """
@@ -89,7 +89,7 @@ class Link_to_file:
             "title": self.title,
             "detail_url": self.detail_url,
             "size": self.size,
-            "source_class": type(self.Source_class).__name__ if self.Source_class else None
+            "source_class": self.source_class.__name__ if self.source_class else None
         }
 
     @staticmethod
@@ -113,7 +113,7 @@ class Link_to_file:
         )
 
     def to_json(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(self.to_dict())
 
     @staticmethod
     def from_json(json_str):
@@ -131,10 +131,11 @@ class Link_to_file:
             self.title == other.title
             and self.detail_url == other.detail_url
             and self.size == other.size
+            and self.source_class == other.source_class
         )
     
     def __hash__(self):
-        return hash((self.title, self.detail_url, self.size))
+        return hash((self.title, self.detail_url, self.size, self.source_class))
 
 
 def load_links_from_file(file_path=JSON_FILE) -> List[Link_to_file]:

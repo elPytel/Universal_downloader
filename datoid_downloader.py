@@ -51,7 +51,7 @@ class Datoid_downloader(Download_page_search):
             title = a_tag.find("span", class_="filename").text.strip()
             size_span = a_tag.find("i", class_="icon-size-white").parent
             size = size_span.text.strip()
-            link_2_file = Link_to_file(title, link, size, Datoid_downloader())
+            link_2_file = Link_to_file(title, link, size, Datoid_downloader)
         except Exception as e:
             raise ValueError("unable to parse atributes." + str(e))
         return link_2_file
@@ -82,8 +82,8 @@ class Datoid_downloader(Download_page_search):
                 # Typ souboru a Titul lze také použít dle potřeby (params.get("Typ souboru"), params.get("Titul"))
             # Odkaz ke stažení
             a_tag = soup.find("a", class_="btn-download")
-            link = Datoid_downloader.webpage + a_tag.get("href")            
-            link_2_file = Link_to_file(title, link, size, Datoid_downloader())
+            link = Datoid_downloader.webpage + a_tag.get("href")
+            link_2_file = Link_to_file(title, link, size, Datoid_downloader)
         except Exception as e:
             raise ValueError("unable to parse atributes." + str(e))
         return link_2_file

@@ -3,7 +3,7 @@ import bs4
 from download import *
 from basic_colors import *
 from download_page_search import *
-from link_to_file import Link_to_file
+from link_to_file import Link_to_file, compare_sizes
 
 class Sdilej_downloader(Download_page_search):
     """
@@ -34,7 +34,7 @@ class Sdilej_downloader(Download_page_search):
             link = soup.find("a").get("href")
             title = soup.find("a").get("title")
             size = soup.find_all("p")[1].text
-            link_2_file = Link_to_file(title, link, size, Sdilej_downloader())
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader)
         except Exception as e:
             raise ValueError("ERROR: unable to parse atributes." + str(e))
         return link_2_file
@@ -45,7 +45,7 @@ class Sdilej_downloader(Download_page_search):
             title = soup.find("h1").text
             size = soup.find("b").next_sibling.replace("|", "").strip()
             link = Sdilej_downloader.webpage+str(soup.find("a", class_="btn btn-danger").get("href"))
-            link_2_file = Link_to_file(title, link, size, Sdilej_downloader())
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader)
         except Exception as e:
             raise ValueError("Download button not found on detail page." + str(e))
         return link_2_file
@@ -60,7 +60,7 @@ class Sdilej_downloader(Download_page_search):
         # Najdi tlačítko pro stažení
         download_btn = soup.find("a", class_="btn btn-danger")
         if not download_btn:
-            raise ValueError("Download button not found on detail page.")
+            raise ValueError("Download button not found on detail page for: {}".format(detail_url))
         download_link = Sdilej_downloader.webpage + str(download_btn.get("href"))
         return download_link
 
@@ -105,9 +105,9 @@ class Sdilej_downloader(Download_page_search):
     @staticmethod
     def test_downloaded_data(data) -> bool:
         """
-        Otestuje stáhnutá data.
-        Data jsou špatná, pokud dešlo k dostatečnému timeoutu.
-        Pokud se na stránce nachází:
+        Tests the downloaded data.
+        The data is invalid if a sufficient timeout has occurred.
+        If the page contains:
         "<script>top.location.href='https://sdilej.cz/free-stahovani';</script>"
         "<h1 class=\"red\">Stahování více souborů najednou</h1>"
         """
@@ -131,7 +131,7 @@ class Sdilej_downloader(Download_page_search):
     @staticmethod
     def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
         """
-        Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
+        Iterates through the search results page and returns information about the files.
 
         yield: Link_to_file
         """
@@ -146,6 +146,7 @@ class Sdilej_downloader(Download_page_search):
                 catalogue_file = Sdilej_downloader.get_atributes_from_catalogue(videobox)
                 download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.detail_url))
                 link_2_file = Sdilej_downloader.get_atributes_from_file_page(download_page_content)
+                link_2_file.detail_url = catalogue_file.detail_url  # zachovej původní detail_url!
                 yield link_2_file
             except ValueError as e:
                 print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)
