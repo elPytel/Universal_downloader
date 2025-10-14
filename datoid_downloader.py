@@ -6,7 +6,6 @@ from download_page_search import *
 
 import logging
 
-# Nastavení loggeru na začátek souboru (před class Datoid_downloader)
 logging.basicConfig(
     filename="datoid_downloader.log",
     level=logging.ERROR,
