@@ -79,6 +79,8 @@ class DownloaderGUI(tk.Tk):
             var.trace_add("write", lambda *args, name=source["name"], var=var: self.settings.update({name: var.get()}) or self.save_config())
             self.source_vars.append(var)
 
+        self.link_map = {} # detail_url -> Link_to_file (mapping with result treeview)
+
         self.setup_translation()
         self.title(_("Universal Downloader"))
         self.geometry("800x600")
@@ -350,55 +352,88 @@ class DownloaderGUI(tk.Tk):
             remove_links_from_file(successfull_files, JSON_FILE)
 
     def result_tree_2_link_2_files(self):
+        """
+        Yields Link_to_file objects from the results treeview.
+        """
         for item in self.results_tree.get_children():
-            _, title, link, size = self.results_tree.item(item)["values"]
-            yield Link_to_file(title, link, size)
+            check, title, size, link = self.results_tree.item(item)["values"]
+            l2f = self.link_map.get(link)
+            if l2f is not None:
+                yield l2f
+            else:
+                self.log(_("Warning: Link not found in map, creating new Link_to_file object."), "warning")
+                yield Link_to_file(title, link, size) # Fallback, should not happen
 
     def replace_results(self, link_2_files):
+        """
+        Replaces all items in the results treeview with new Link_to_file objects.
+        And updates the link_map accordingly.
+        """
         self.results_tree.delete(*self.results_tree.get_children())
         self.check_vars = [False for _ in link_2_files]
+        self.link_map.clear()
         for i, link_2_file in enumerate(link_2_files):
-            self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+            self.results_tree.insert(
+                "", "end",
+                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                tags=(str(i),)
+            )
+            self.link_map[link_2_file.detail_url] = link_2_file
 
     def add_unique_to_results(self, link_2_files):
         """
-        TODO: fix this function to add only unique items
+        Adds only unique Link_to_file objects to the results treeview.
+        And updates the link_map accordingly.
         """
-        existing_links = {link_2_file.detail_url for link_2_file in self.result_tree_2_link_2_files()}
-        
+        existing_links = set(self.link_map.keys())
         for link_2_file in link_2_files:
             if link_2_file.detail_url not in existing_links:
-                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url), tags=(str(len(self.check_vars)),))
+                self.results_tree.insert(
+                    "", "end",
+                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                    tags=(str(len(self.check_vars)),)
+                )
                 self.check_vars.append(False)
+                self.link_map[link_2_file.detail_url] = link_2_file
                 existing_links.add(link_2_file.detail_url)
 
     def remove_from_results(self, link_2_files):
-        for link_2_file in link_2_files:
-            for item in self.results_tree.get_children():
-                _, title, link, size = self.results_tree.item(item)["values"]
-                if link_2_file == Link_to_file(title, link, size):
-                    self.results_tree.delete(item)
-                    break
+        links_to_remove = {l.detail_url for l in link_2_files}
+        for item in self.results_tree.get_children():
+            _, title, size, link = self.results_tree.item(item)["values"]
+            if link in links_to_remove:
+                self.results_tree.delete(item)
+                self.link_map.pop(link, None)
 
     def save_selected(self):
+        """
+        Loads selected items from the results treeview.
+        Maps them to Link_to_file objects using link_map.
+        Saves the Link_to_file objects to JSON_FILE.
+        """
         self.log(_("Saving selected items..."), "info")
 
-        selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        
-        link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
+        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        link_2_files = [self.link_map[link] for link in selected_links if link in self.link_map]
         save_links_to_file(link_2_files, JSON_FILE)
-        
+
         self.log(_("Saved items: {}").format(len(link_2_files)), "success")
 
     def load_from_file(self):
         self.log(_("Loading selected items..."), "info")
         link_2_files = load_links_from_file(JSON_FILE)
-        self.replace_results(link_2_files)
+        self.replace_results(link_2_files) # automatically updates link_map
         self.log(_("Loaded items: {}").format(len(link_2_files)), "success")
 
     def clear_all(self):
+        """
+        Clears all items from the:
+         - results treeview,
+         - link_map.
+        """
         self.results_tree.delete(*self.results_tree.get_children())
         self.check_vars = []
+        self.link_map.clear()
         self.log(_("Cleared all displayed files."), "info")
 
     def clear_not_selected(self):
