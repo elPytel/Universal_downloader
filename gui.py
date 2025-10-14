@@ -293,13 +293,24 @@ class DownloaderGUI(tk.Tk):
     def start_download_thread(self):
         threading.Thread(target=self.download_selected).start()
 
+    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        """
+        Returns a list of Link_to_file objects for the selected items in the results treeview.
+        """
+        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        return [self.link_map[link] for link in selected_links if link in self.link_map]
+
     def download_selected(self):
         self.log(_("Download initiated..."), "info")
         
-        selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        link_2_files = self.get_selected_link_2_files()
+        if not link_2_files:
+            self.log(_("No files selected for download."), "warning")
+            return
         
-        link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
-
+        self.log(_("Number of files to download: {}").format(len(link_2_files)), "info")
+            
+        # Stahování
         successfull_files = []
         while len(link_2_files) > 0:
             link_2_file = link_2_files.pop(0)
@@ -317,7 +328,7 @@ class DownloaderGUI(tk.Tk):
             file_size = None
             try:
                 file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
-                if Sdilej_downloader.test_downloaded_file(link_2_file, download_folder):
+                if link_2_file.source_class.test_downloaded_file(link_2_file, download_folder):
                     successfull_files.append(link_2_file)
                     self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
                     self.remove_from_results([link_2_file])
