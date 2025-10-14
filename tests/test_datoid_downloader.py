@@ -88,8 +88,21 @@ def test_get_atributes_from_file_page(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
     assert str(Datoid_downloader.get_atributes_from_file_page(soup)) == str(link_2_file)
 
+# https://datoid.to/f/ndpuc9/bila-nemoc-capek-karel-epub?request=1
+# ERROR: ip in use
+"""
+@pytest.mark.parametrize("url, download_link", [
+    ("https://datoid.to/ndpuc9/bila-nemoc-capek-karel-epub", "TODO: actual download link here")
+])
+def test_get_download_link(url, download_link):
+    link_2_file = Link_to_file("Test", url, "Test", Datoid_downloader)
+    assert link_2_file.get_download_link() == download_link
+"""
+    
 @pytest.mark.parametrize("prompt, file_type, url", [
     ("karel capek", "archive", "https://datoid.cz/s/karel-capek?key=categories&value=archive"),
 ])
 def test_search(prompt, file_type, url):
     assert Datoid_downloader.generate_search_url(prompt, file_type) == url
+
+
