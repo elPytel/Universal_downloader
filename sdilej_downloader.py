@@ -1,17 +1,22 @@
+from __future__ import annotations
 import bs4
-from link_to_file import *
+from download import *
 from basic_colors import *
 from download_page_search import *
+from link_to_file import Link_to_file, compare_sizes
 
 class Sdilej_downloader(Download_page_search):
+    """
+    Downloader from: sdilej.cz
+    """
     webpage = "https://sdilej.cz"
     
     def __init__(self):
         pass
     
-    def search(self, prompt, file_type="all", search_type="relevance"):
-        if prompt is None:
-            return None
+    def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
+        if prompt is None or prompt.strip() == "":
+            raise ValueError("Prompt cannot be empty.")
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
         page = download_page(url)
         return Sdilej_downloader.parse_catalogue(page)
@@ -29,7 +34,7 @@ class Sdilej_downloader(Download_page_search):
             link = soup.find("a").get("href")
             title = soup.find("a").get("title")
             size = soup.find_all("p")[1].text
-            link_2_file = Link_to_file(title, link, size)
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader)
         except Exception as e:
             raise ValueError("ERROR: unable to parse atributes." + str(e))
         return link_2_file
@@ -40,10 +45,24 @@ class Sdilej_downloader(Download_page_search):
             title = soup.find("h1").text
             size = soup.find("b").next_sibling.replace("|", "").strip()
             link = Sdilej_downloader.webpage+str(soup.find("a", class_="btn btn-danger").get("href"))
-            link_2_file = Link_to_file(title, link, size)
+            link_2_file = Link_to_file(title, link, size, Sdilej_downloader)
         except Exception as e:
-            raise ValueError("ERROR: unable to parse atributes." + str(e))
+            raise ValueError("Download button not found on detail page." + str(e))
         return link_2_file
+    
+    @staticmethod
+    def get_download_link_from_detail(detail_url: str) -> str:
+        """
+        Získá přímý odkaz ke stažení ze stránky s detailem souboru na sdilej.cz.
+        """
+        page = download_page(detail_url)
+        soup = bs4.BeautifulSoup(page.text, "html.parser")
+        # Najdi tlačítko pro stažení
+        download_btn = soup.find("a", class_="btn btn-danger")
+        if not download_btn:
+            raise ValueError("Download button not found on detail page for: {}".format(detail_url))
+        download_link = Sdilej_downloader.webpage + str(download_btn.get("href"))
+        return download_link
 
     @staticmethod
     def is_valid_download_page(page) -> bool:
@@ -64,9 +83,10 @@ class Sdilej_downloader(Download_page_search):
         
         soup = remove_style(soup)
         page_txt = soup.find("div", class_="content")
-        text = remove_empty_lines(page_txt.text)
-        if page_txt is not None and any_text_coresponds_to(text, invalid_texts):
-            return False
+        if page_txt is not None:
+            text = remove_empty_lines(page_txt.text)
+            if any_text_coresponds_to(text, invalid_texts):
+                return False
         return True
     
     @staticmethod
@@ -85,9 +105,9 @@ class Sdilej_downloader(Download_page_search):
     @staticmethod
     def test_downloaded_data(data) -> bool:
         """
-        Otestuje stáhnutá data.
-        Data jsou špatná, pokud dešlo k dostatečnému timeoutu.
-        Pokud se na stránce nachází:
+        Tests the downloaded data.
+        The data is invalid if a sufficient timeout has occurred.
+        If the page contains:
         "<script>top.location.href='https://sdilej.cz/free-stahovani';</script>"
         "<h1 class=\"red\">Stahování více souborů najednou</h1>"
         """
@@ -109,9 +129,9 @@ class Sdilej_downloader(Download_page_search):
         return content
 
     @staticmethod
-    def parse_catalogue(page):
+    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
         """
-        Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
+        Iterates through the search results page and returns information about the files.
 
         yield: Link_to_file
         """
@@ -124,8 +144,9 @@ class Sdilej_downloader(Download_page_search):
             catalogue_file = None
             try:
                 catalogue_file = Sdilej_downloader.get_atributes_from_catalogue(videobox)
-                download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.link))
+                download_page_content = Sdilej_downloader.parse_file_page(download_page(catalogue_file.detail_url))
                 link_2_file = Sdilej_downloader.get_atributes_from_file_page(download_page_content)
+                link_2_file.detail_url = catalogue_file.detail_url  # zachovej původní detail_url!
                 yield link_2_file
             except ValueError as e:
                 print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)

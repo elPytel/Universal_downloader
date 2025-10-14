@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import queue
 import gettext
 import argparse
 import threading
@@ -11,6 +12,7 @@ from tkinter import ttk
 from link_to_file import *
 from PIL import ImageTk
 from sdilej_downloader import Sdilej_downloader
+from datoid_downloader import Datoid_downloader
 from main import download_folder, JSON_FILE
 from download_page_search import Download_page_search, InsufficientTimeoutError
 
@@ -22,6 +24,11 @@ LANGUAGES = {
     'EN': 'en',
     'CZ': 'cs'
 }
+
+SOURCES = [
+    {"name": "Sdilej.cz", "class": Sdilej_downloader, "timeout": TIME_OUT},
+    {"name": "Datoid.cz", "class": Datoid_downloader, "timeout": TIME_OUT},
+]
 
 DOMAIN = 'universal_downloader'
 ICON_FILE = 'icon.png'
@@ -53,7 +60,7 @@ class DownloaderGUI(tk.Tk):
         super().__init__()
         icon_path = get_resource_path(os.path.join(ASSETS_DIR, "icon.png"))
         if os.path.isfile(icon_path):
-            icon = ImageTk.PhotoImage(file=icon_path)
+            icon = tk.PhotoImage(file=icon_path)
             self.iconphoto(True, icon)
         else:
             print(f"Icon: '{icon_path}' not found.")
@@ -64,6 +71,16 @@ class DownloaderGUI(tk.Tk):
         self.remove_successful_var.trace_add("write", self.update_remove_successful)
         self.add_files_with_failed_timeout_var = tk.BooleanVar(value=self.settings.get("add_files_with_failed_timeout", False))
         self.add_files_with_failed_timeout_var.trace_add("write", self.update_add_files_with_failed_timeout)
+
+        self.source_vars = []
+        for source in SOURCES:
+            var = tk.BooleanVar(value=self.settings.get(source["name"], True))
+            # Save changes to config on change
+            var.trace_add("write", lambda *args, name=source["name"], var=var: self.settings.update({name: var.get()}) or self.save_config())
+            self.source_vars.append(var)
+
+        self.link_map = {} # detail_url -> Link_to_file (mapping with result treeview)
+
         self.setup_translation()
         self.title(_("Universal Downloader"))
         self.geometry("800x600")
@@ -116,6 +133,18 @@ class DownloaderGUI(tk.Tk):
         settings_menu.add_checkbutton(label=_("Remove successful from json"), variable=self.remove_successful_var)
         settings_menu.add_checkbutton(label=_("Add back files with failed timeout"), variable=self.add_files_with_failed_timeout_var)
         menubar.add_cascade(label=_("Settings"), menu=settings_menu)
+
+        # Zdroje menu
+        sources_menu = tk.Menu(menubar, tearoff=0)
+        for i, source in enumerate(SOURCES):
+            sources_menu.add_checkbutton(
+                label=source["name"],
+                variable=self.source_vars[i],
+                onvalue=True,
+                offvalue=False
+            )
+        menubar.add_cascade(label=_("Sources"), menu=sources_menu)
+
 
         # Search frame
         search_frame = ttk.Frame(self)
@@ -210,36 +239,78 @@ class DownloaderGUI(tk.Tk):
             self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
 
     def start_search_thread(self):
-        threading.Thread(target=self.search_files).start()
-
-    def search_files(self):
-        self.log(_("Search initiated..."), "info", end="")
+        self.searching = True
+        self.result_queue = queue.Queue()
+        self.threads = []
+        self.link_2_files = []
+        self.max_results = int(self.max_results_entry.get())
         prompt = self.search_entry.get()
         file_type = self.file_type_var.get()
         search_type = self.search_type_var.get()
-        max_results = int(self.max_results_entry.get())
-        
-        link_2_files = Sdilej_downloader().search(prompt, file_type, search_type)
-        number_of_files = 0
-        for i, link_2_file in enumerate(link_2_files):
-            if max_results and i >= max_results:
-                break
-            self.add_uniqe_to_results([link_2_file])
-            number_of_files = i + 1
+        selected_sources = [source["class"] for i, source in enumerate(SOURCES) if self.source_vars[i].get()]
+        self.stop_event = threading.Event() 
+
+        def search_source(source_class):
+            try:
+                results = source_class().search(prompt, file_type, search_type)
+                for r in results:
+                    if self.stop_event.is_set():
+                        break
+                    self.result_queue.put(r)
+            except Exception as e:
+                self.log(_("Error in source {}: {}").format(source_class.__name__, e), "error")
+
+        for source_class in selected_sources:
+            t = threading.Thread(target=search_source, args=(source_class,))
+            t.start()
+            self.threads.append(t)
+
+        self.log(_("Search initiated..."), "info", end="")
+        self.after(100, self.process_search_queue)
+
+    def process_search_queue(self):
+        added = 0
+        while not self.result_queue.empty() and (not self.max_results or len(self.link_2_files) < self.max_results):
+            link_2_file = self.result_queue.get()
+            self.add_unique_to_results([link_2_file])
+            self.link_2_files.append(link_2_file)
             self.log(".", "info", end="")
-        
-        self.log(_("\nNumber of files found: {}").format(number_of_files), "success")
+            added += 1
+
+            # Pokud jsme dosáhli max_results, nastav stop_event
+            if self.max_results and len(self.link_2_files) >= self.max_results:
+                self.stop_event.set()
+
+        if (any(t.is_alive() for t in self.threads) or not self.result_queue.empty()) and not self.stop_event.is_set():
+            self.after(100, self.process_search_queue)
+        elif any(t.is_alive() for t in self.threads) or not self.result_queue.empty():
+            # Po dosažení max_results ještě necháme doběhnout frontu
+            self.after(100, self.process_search_queue)
+        else:
+            self.log(_("\nNumber of files found: {}").format(len(self.link_2_files)), "success")
+            self.searching = False
 
     def start_download_thread(self):
         threading.Thread(target=self.download_selected).start()
 
+    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        """
+        Returns a list of Link_to_file objects for the selected items in the results treeview.
+        """
+        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        return [self.link_map[link] for link in selected_links if link in self.link_map]
+
     def download_selected(self):
         self.log(_("Download initiated..."), "info")
         
-        selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        link_2_files = self.get_selected_link_2_files()
+        if not link_2_files:
+            self.log(_("No files selected for download."), "warning")
+            return
         
-        link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
-
+        self.log(_("Number of files to download: {}").format(len(link_2_files)), "info")
+            
+        # Stahování
         successfull_files = []
         while len(link_2_files) > 0:
             link_2_file = link_2_files.pop(0)
@@ -257,7 +328,7 @@ class DownloaderGUI(tk.Tk):
             file_size = None
             try:
                 file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
-                if Sdilej_downloader.test_downloaded_file(link_2_file, download_folder):
+                if link_2_file.source_class.test_downloaded_file(link_2_file, download_folder):
                     successfull_files.append(link_2_file)
                     self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
                     self.remove_from_results([link_2_file])
@@ -292,55 +363,88 @@ class DownloaderGUI(tk.Tk):
             remove_links_from_file(successfull_files, JSON_FILE)
 
     def result_tree_2_link_2_files(self):
+        """
+        Yields Link_to_file objects from the results treeview.
+        """
         for item in self.results_tree.get_children():
-            _, title, link, size = self.results_tree.item(item)["values"]
-            yield Link_to_file(title, link, size)
+            check, title, size, link = self.results_tree.item(item)["values"]
+            l2f = self.link_map.get(link)
+            if l2f is not None:
+                yield l2f
+            else:
+                self.log(_("Warning: Link not found in map, creating new Link_to_file object."), "warning")
+                yield Link_to_file(title, link, size, Download_page_search) # Fallback, should not happen
 
     def replace_results(self, link_2_files):
+        """
+        Replaces all items in the results treeview with new Link_to_file objects.
+        And updates the link_map accordingly.
+        """
         self.results_tree.delete(*self.results_tree.get_children())
         self.check_vars = [False for _ in link_2_files]
+        self.link_map.clear()
         for i, link_2_file in enumerate(link_2_files):
-            self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(i),))
+            self.results_tree.insert(
+                "", "end",
+                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                tags=(str(i),)
+            )
+            self.link_map[link_2_file.detail_url] = link_2_file
 
-    def add_uniqe_to_results(self, link_2_files):
+    def add_unique_to_results(self, link_2_files):
         """
-        TODO: fix this function to add only unique items
+        Adds only unique Link_to_file objects to the results treeview.
+        And updates the link_map accordingly.
         """
-        existing_links = {link_2_file.link for link_2_file in self.result_tree_2_link_2_files()}
-        
+        existing_links = set(self.link_map.keys())
         for link_2_file in link_2_files:
-            if link_2_file.link not in existing_links:
-                self.results_tree.insert("", "end", values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.link), tags=(str(len(self.check_vars)),))
+            if link_2_file.detail_url not in existing_links:
+                self.results_tree.insert(
+                    "", "end",
+                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                    tags=(str(len(self.check_vars)),)
+                )
                 self.check_vars.append(False)
-                existing_links.add(link_2_file.link)
+                self.link_map[link_2_file.detail_url] = link_2_file
+                existing_links.add(link_2_file.detail_url)
 
     def remove_from_results(self, link_2_files):
-        for link_2_file in link_2_files:
-            for item in self.results_tree.get_children():
-                _, title, link, size = self.results_tree.item(item)["values"]
-                if link_2_file == Link_to_file(title, link, size):
-                    self.results_tree.delete(item)
-                    break
+        links_to_remove = {l.detail_url for l in link_2_files}
+        for item in self.results_tree.get_children():
+            _, title, size, link = self.results_tree.item(item)["values"]
+            if link in links_to_remove:
+                self.results_tree.delete(item)
+                self.link_map.pop(link, None)
 
     def save_selected(self):
+        """
+        Loads selected items from the results treeview.
+        Maps them to Link_to_file objects using link_map.
+        Saves the Link_to_file objects to JSON_FILE.
+        """
         self.log(_("Saving selected items..."), "info")
 
-        selected_items = [self.results_tree.item(item)["values"] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        
-        link_2_files = [Link_to_file(title, link, size) for _, title, size, link in selected_items]
+        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        link_2_files = [self.link_map[link] for link in selected_links if link in self.link_map]
         save_links_to_file(link_2_files, JSON_FILE)
-        
+
         self.log(_("Saved items: {}").format(len(link_2_files)), "success")
 
     def load_from_file(self):
         self.log(_("Loading selected items..."), "info")
         link_2_files = load_links_from_file(JSON_FILE)
-        self.replace_results(link_2_files)
+        self.replace_results(link_2_files) # automatically updates link_map
         self.log(_("Loaded items: {}").format(len(link_2_files)), "success")
 
     def clear_all(self):
+        """
+        Clears all items from the:
+         - results treeview,
+         - link_map.
+        """
         self.results_tree.delete(*self.results_tree.get_children())
         self.check_vars = []
+        self.link_map.clear()
         self.log(_("Cleared all displayed files."), "info")
 
     def clear_not_selected(self):

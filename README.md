@@ -7,7 +7,7 @@ Slouží pro stahování souborů z webů:
 ## Obsah
 - [Universal downloader](#universal-downloader)
   - [Obsah](#obsah)
-  - [Instalace](#instalace)
+  - [Instalace závislostí](#instalace-závislostí)
     - [Pod Linuxem](#pod-linuxem)
   - [Použití v příkazové řádce](#použití-v-příkazové-řádce)
     - [Help](#help)
@@ -18,13 +18,16 @@ Slouží pro stahování souborů z webů:
     - [Načtení odkazů ze souboru](#načtení-odkazů-ze-souboru)
     - [Uložení odkazů do souboru](#uložení-odkazů-do-souboru)
     - [Stažení souborů](#stažení-souborů-1)
+    - [Výběr zdrojů pro stahování](#výběr-zdrojů-pro-stahování)
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
+    - [TODO:](#todo)
+    - [Jak sestavit exe soubor](#jak-sestavit-exe-soubor)
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
 
-## Instalace
+## Instalace závislostí
 Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci použijte následující příkaz:
 ```bash
 pip install -r requirements.txt
@@ -127,6 +130,11 @@ Označte soubory, které chcete stáhnout a stiskněte tlačítko `Download`.
 > [!tip]
 > Když zaškrtnete tlačítko `Remove`, tak se soubor odstraní ze seznamu po úspěšném stažení.
 
+### Výběr zdrojů pro stahování
+V menu `Sources` je možné vybrat, ze kterých zdrojů se mají soubory vyhledávat a stahovat.
+
+![Multi Source](assets/multi_source.png)
+
 ## Pokročilé použití
 V grafickém režimu je možné vyhledat soubory ke stažení a následně je uložit do souboru `files.json`. Aplikaci pak můžte spustit v příkazové řádce a stáhnout soubory podle tohoto seznamu.
 
@@ -151,6 +159,47 @@ python3 main.py --tui
 
 ## Vývoj
 
+### TODO:
+
+- Integrace s dalšími weby:
+  - [ ] datoid.cz,
+  - [x] sdilej.cz,
+  - [ ] prehraj.to
+
+### Jak sestavit exe soubor
+Pro sestavení exe souboru použijte:
+- Windows: `build.bat`
+- Linux: `build.sh`
+
+Obsah skriptu `build.sh`:
+```bash
+#!/bin/bash
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Build the application using pyinstaller
+pyinstaller --onefile --windowed \
+    --icon=assets/icon.ico \
+    --add-data "assets/icon.png:assets" \
+    --add-data "locales:locales" \
+    --name universal_downloader \
+    gui.py
+
+# Deactivate the virtual environment
+deactivate
+echo "Done."
+```
+
 ### Testování
 Pro spuštění testů použijte:
 ```bash
@@ -164,6 +213,13 @@ pytest tests/test_datoid_downloader.py
 
 ### Dokumentace
 Pro vygenerování dokumentace použijte:
-```bash
-pdoc .\gui.py .\main.py .\datoid_downloader.py .\sdilej_downloader.py .\download_page_search.py -o ./docs
+```cmd
+pdoc .\gui.py .\main.py .\datoid_downloader.py -o ./docs
 ```
+
+Linux:
+```bash
+pdoc ./gui.py ./main.py ./datoid_downloader.py ./sdilej_downloader.py ./download_page_search.py -o ./docs
+```
+
+Je nastavená github actions pro automatické generování dokumentace při pushu do mainu a její nahrání na GitHub pages [zde](https://elpytel.github.io/Universal_downloader/).

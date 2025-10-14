@@ -9,6 +9,9 @@ msgstr "Universal Downloader"
 msgid "Search:"
 msgstr "Search:"
 
+msgid "Sources"
+msgstr "Sources"
+
 msgid "Max Results:"
 msgstr "Max Results:"
 
