@@ -1,6 +1,6 @@
 import bs4
 import requests
-#from link_to_file import Link_to_file
+from link_to_file import Link_to_file
 from basic_colors import *
 from download_page_search import *
 

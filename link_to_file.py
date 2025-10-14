@@ -7,7 +7,6 @@ from download import *
 from basic_colors import *
 
 from download_page_search import Download_page_search
-from prehrajto_downloader import Prehrajto_downloader
 
 DEBUG = True
 VERBOSE = True
