@@ -7,6 +7,7 @@ from download import *
 from basic_colors import *
 
 from download_page_search import Download_page_search
+from prehrajto_downloader import Prehrajto_downloader
 
 DEBUG = True
 VERBOSE = True
@@ -96,10 +97,12 @@ class Link_to_file:
     def from_dict(data):
         from datoid_downloader import Datoid_downloader
         from sdilej_downloader import Sdilej_downloader
+        from prehrajto_downloader import Prehrajto_downloader
 
         SOURCE_CLASS_MAP = {
             "Sdilej_downloader": Sdilej_downloader,
             "Datoid_downloader": Datoid_downloader,
+            "Prehrajto_downloader": Prehrajto_downloader,
             # případně další zdroje
         }
         source_class = SOURCE_CLASS_MAP.get(data.get("source_class"), None)
