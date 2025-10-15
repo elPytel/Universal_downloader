@@ -99,12 +99,7 @@ def test_add_links_to_list(old_links, new_links, result):
     new_links = add_links_to_list(old_links, new_links)
     result = list(set(result))
     assert len(new_links) == len(result)
-    for i, link in enumerate(new_links):
-        if link != result[i]:
-            print(link)
-            print("?=")
-            print(result[i])
-        assert link == result[i]
+    assert set(new_links) == set(result)
 
 def test_server_name():
     link_2_file = Link_to_file("title", "https://sdilej.cz/free/index.php?id=28238129", "size", Sdilej_downloader)

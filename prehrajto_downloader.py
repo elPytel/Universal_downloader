@@ -45,6 +45,8 @@ class Prehrajto_downloader(Download_page_search):
         if response.status_code != 200:
             raise ValueError(f"Failed to retrieve search results, status code: {response.status_code} for URL: {url}")
         return Prehrajto_downloader.parse_catalogue(page)
+    # TODO: implement next page
+    # https://prehraj.to/hledej/zaklínač?vp-page=2
     
     @staticmethod
     def get_atributes_from_catalogue(soup) -> Link_to_file:
