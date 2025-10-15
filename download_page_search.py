@@ -61,6 +61,8 @@ class Download_page_search:
         """
         Search for files on the website.
         """
+        if prompt is None or prompt.strip() == "":
+            raise ValueError("Prompt cannot be empty.")
         raise NotImplementedError()
     
     @staticmethod

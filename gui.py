@@ -13,6 +13,7 @@ from link_to_file import *
 from PIL import ImageTk
 from sdilej_downloader import Sdilej_downloader
 from datoid_downloader import Datoid_downloader
+from prehrajto_downloader import Prehrajto_downloader
 from main import download_folder, JSON_FILE
 from download_page_search import Download_page_search, InsufficientTimeoutError
 
@@ -28,6 +29,7 @@ LANGUAGES = {
 SOURCES = [
     {"name": "Sdilej.cz", "class": Sdilej_downloader, "timeout": TIME_OUT},
     {"name": "Datoid.cz", "class": Datoid_downloader, "timeout": TIME_OUT},
+    {"name": "Prehraj.to", "class": Prehrajto_downloader, "timeout": TIME_OUT},
 ]
 
 DOMAIN = 'universal_downloader'
