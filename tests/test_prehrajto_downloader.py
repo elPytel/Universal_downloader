@@ -103,6 +103,10 @@ def test_get_download_link(url, download_link):
 
 @pytest.mark.parametrize("prompt, file_type, url", [
     ("krteček", "video", "https://prehraj.to/hledej/krteček"),
+    ("karel čapek", "video", "https://prehraj.to/hledej/karel%20čapek"),
+    ("zaklínač", "all", "https://prehraj.to/hledej/zaklínač"),
 ])
 def test_search(prompt, file_type, url):
     assert Prehrajto_downloader.generate_search_url(prompt, file_type) == url
+
+# https://prehraj.to/hledej/zaklínač?vp-page=2

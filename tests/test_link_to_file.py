@@ -39,6 +39,34 @@ def test_from_json(lines, link_2_files):
         assert str(link_2_file) == str(link_2_files[i])
         assert link_2_file == link_2_files[i]
 
+@pytest.mark.parametrize("file, ext", [
+    ("file.txt", ".txt"),
+    ("file.tar.gz", ".gz"),
+    ("file", None),
+    ("file.", "."),
+    ("text.avi", ".avi"),
+    ("file.name.with.dots.mp3", ".mp3"),
+    ("file.name.with.dots", ".dots"),
+    ("file.name.with.dots.", "."),
+    ("Karel Čapek - Apokryfy (2008).mp3", ".mp3"),
+    ("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", ".mp3")
+])
+def test_get_extension_from_title(file, ext):
+    assert get_extension_from_title(file) == ext
+
+@pytest.mark.parametrize("url, ext", [
+    ("https://example.com/file.txt", ".txt"),
+    ("https://example.com/file.tar.gz", ".gz"),
+    ("https://example.com/file", None),
+    ("https://example.com/file.", "."),
+    ("https://example.com/text.avi", ".avi"),
+    ("https://example.com/file.name.with.dots.mp3", ".mp3"),
+    ("https://example.com/file.name.with.dots", ".dots"),
+    ("https://example.com/file.name.with.dots.", ".")
+])
+def test_get_extension_from_url(url, ext):
+    assert get_extension_from_url(url) == ext
+
 @pytest.mark.parametrize("link_2_file", [
     Link_to_file("title", "detail_url", "size", Sdilej_downloader)
 ])

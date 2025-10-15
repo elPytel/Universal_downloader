@@ -162,9 +162,9 @@ python3 main.py --tui
 ### TODO:
 
 - Integrace s dalšími weby:
-  - [ ] datoid.cz,
+  - [x] datoid.cz,
   - [x] sdilej.cz,
-  - [ ] prehraj.to
+  - [x] prehraj.to
 
 ### Jak sestavit exe soubor
 Pro sestavení exe souboru použijte:

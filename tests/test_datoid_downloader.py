@@ -98,7 +98,7 @@ def test_get_download_link(url, download_link):
     link_2_file = Link_to_file("Test", url, "Test", Datoid_downloader)
     assert link_2_file.get_download_link() == download_link
 """
-    
+
 @pytest.mark.parametrize("prompt, file_type, url", [
     ("karel capek", "archive", "https://datoid.cz/s/karel-capek?key=categories&value=archive"),
 ])

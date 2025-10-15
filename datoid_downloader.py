@@ -1,23 +1,23 @@
 import bs4
+import logging
 import requests
 from link_to_file import Link_to_file
 from basic_colors import *
 from download_page_search import *
-
-import logging
-
-logging.basicConfig(
-    filename="datoid_downloader.log",
-    level=logging.ERROR,
-    format="%(asctime)s %(levelname)s: %(message)s",
-    encoding="utf-8"
-)
 
 class Datoid_downloader(Download_page_search):
     """
     Downloader from: datoid.cz
     """
     webpage = "https://datoid.cz"
+
+    logger = logging.getLogger("Datoid_downloader")
+    if not logger.hasHandlers():
+        handler = logging.FileHandler("datoid_downloader.log", encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
     
     def __init__(self):
         pass
@@ -111,19 +111,19 @@ class Datoid_downloader(Download_page_search):
         request = "?request=1"
         response = requests.get(detail_url + request)
         if response.status_code != 200:
-            logging.error(f"Request failed with status code {response.status_code} for detail URL: {detail_url}")
+            Datoid_downloader.logger.error(f"Request failed with status code {response.status_code} for detail URL: {detail_url}")
             raise ValueError(f"Request failed with status code {response.status_code}")
         
         try:
             json_response = response.json()
         except Exception as e:
-            logging.error(f"Failed to decode JSON response for detail URL: {detail_url}. Error: {e}")
+            Datoid_downloader.logger.error(f"Failed to decode JSON response for detail URL: {detail_url}. Error: {e}")
             raise ValueError("Failed to decode JSON response.") from e
         
         if "download_link" in json_response and json_response["download_link"]:
             return json_response["download_link"]
         else:
-            logging.error(f"JSON response: {json_response} for detail URL: {detail_url}")
+            Datoid_downloader.logger.error(f"JSON response: {json_response} for detail URL: {detail_url}")
             raise ValueError("No download link found in json_response.")
 
     @staticmethod

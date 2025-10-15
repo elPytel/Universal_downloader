@@ -13,6 +13,7 @@ from time import sleep
 from link_to_file import *
 from sdilej_downloader import Sdilej_downloader
 from datoid_downloader import Datoid_downloader
+from prehrajto_downloader import Prehrajto_downloader
 from download_page_search import Download_page_search
 
 JSON_FILE = "files.json"
@@ -86,7 +87,7 @@ if __name__ == "__main__":
         search_type = args.search_type if args.search_type else "relevance"
                 
         link_2_files = []
-        for i, link_2_file in enumerate(Datoid_downloader().search(prompt, file_type, search_type)):
+        for i, link_2_file in enumerate(Prehrajto_downloader().search(prompt, file_type, search_type)):
             if args.number and i >= args.number:
                 break
             if DEBUG:

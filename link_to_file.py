@@ -2,6 +2,8 @@ from __future__ import annotations
 import os
 import json
 import requests
+import mimetypes
+from urllib.parse import urlparse
 from typing import List
 from download import *
 from basic_colors import *
@@ -51,6 +53,26 @@ def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
         size2 = size_string_2_bytes(size2)
     return size1 * (1 - precision) < size2 < size1 * (1 + precision)
 
+def get_extension_from_title(title: str) -> str | None:
+    """
+    Vrátí příponu souboru z názvu, včetně tečky (např. '.mp4'), nebo None pokud není.
+    """
+    _, ext = os.path.splitext(title)
+    return ext if ext else None
+
+def get_extension_from_url(url: str) -> str | None:
+    """
+    Vrátí příponu souboru z URL, včetně tečky (např. '.mp4'), nebo None pokud není.
+    """
+    path = urlparse(url).path
+    _, ext = os.path.splitext(path)
+    return ext if ext else None
+
+def get_response_extension(response):
+    content_type = response.headers.get('Content-Type')
+    ext = mimetypes.guess_extension(content_type) if content_type else None
+    return ext
+
 class Link_to_file:
     def __init__(self, title, detail_url, size, source_class: type[Download_page_search]):
         self.title = title
@@ -75,7 +97,25 @@ class Link_to_file:
             raise ValueError(f"File {self.title} already exists.")
 
         download_link = self.get_download_link()
-        response = requests.get(download_link)
+        response = requests.get(download_link, stream=True)
+        ext = get_response_extension(response)
+        self.save_file_with_extension(response, download_folder, ext)
+
+    def save_file_with_extension(self, response, download_folder=".", ext=None):
+        if not ext:
+            ext = get_extension_from_title(self.title)
+        if not ext:
+            ext = get_extension_from_url(self.detail_url)
+        if not ext:
+            print(f"Warning: Unable to determine file extension for {self.title}, using .bin as fallback.")
+            ext = ".bin"  # fallback
+
+        if not self.title.endswith(ext):
+            self.title += ext
+
+        file_path = os.path.join(download_folder, self.title)
+        if os.path.exists(file_path):
+            raise ValueError(f"File {self.title} already exists.")
         save_binary_file(response, file_path)
     
     def download_with_progress(self, download_folder="."):
