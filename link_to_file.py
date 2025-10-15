@@ -1,9 +1,14 @@
+from __future__ import annotations
 import os
 import json
 import requests
+import mimetypes
+from urllib.parse import urlparse
 from typing import List
 from download import *
 from basic_colors import *
+
+from download_page_search import Download_page_search
 
 DEBUG = True
 VERBOSE = True
@@ -36,7 +41,7 @@ def size_string_2_bytes(size : str) -> int:
         return int(float(size[:-1]))
     return int(float(size))
 
-def compare_sizes(size1 : str, size2 : str, precision=0.1) -> bool:
+def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
     """
     Compares two sizes of files.
     precision: 0.1 means that the sizes can differ by 10%.
@@ -48,15 +53,42 @@ def compare_sizes(size1 : str, size2 : str, precision=0.1) -> bool:
         size2 = size_string_2_bytes(size2)
     return size1 * (1 - precision) < size2 < size1 * (1 + precision)
 
+def get_extension_from_title(title: str) -> str | None:
+    """
+    Vrátí příponu souboru z názvu, včetně tečky (např. '.mp4'), nebo None pokud není.
+    """
+    _, ext = os.path.splitext(title)
+    return ext if ext else None
+
+def get_extension_from_url(url: str) -> str | None:
+    """
+    Vrátí příponu souboru z URL, včetně tečky (např. '.mp4'), nebo None pokud není.
+    """
+    path = urlparse(url).path
+    _, ext = os.path.splitext(path)
+    return ext if ext else None
+
+def get_response_extension(response):
+    content_type = response.headers.get('Content-Type')
+    ext = mimetypes.guess_extension(content_type) if content_type else None
+    return ext
+
 class Link_to_file:
-    def __init__(self, title, link, size):
+    def __init__(self, title, detail_url, size, source_class: type[Download_page_search]):
         self.title = title
-        self.link = link
+        self.detail_url = detail_url
         self.size = size
+        self.source_class = source_class
+    
+    def get_download_link(self) -> str:
+        """
+        Get the direct download link from the detail page URL.
+        """
+        return self.source_class.get_download_link_from_detail(self.detail_url)
 
     def download(self, download_folder="."):
         """
-        Stáhne soubor z internetu a uloží jej do souboru.
+        Downloads a file from the internet and saves it to the specified folder.
         """
         file_path = os.path.join(download_folder, self.title)
         if not os.path.exists(download_folder):
@@ -64,64 +96,104 @@ class Link_to_file:
         if os.path.exists(file_path):
             raise ValueError(f"File {self.title} already exists.")
 
-        response = requests.get(self.link)
+        download_link = self.get_download_link()
+        response = requests.get(download_link, stream=True)
+        ext = get_response_extension(response)
+        self.save_file_with_extension(response, download_folder, ext)
+
+    def save_file_with_extension(self, response, download_folder=".", ext=None):
+        if not ext:
+            ext = get_extension_from_title(self.title)
+        if not ext:
+            ext = get_extension_from_url(self.detail_url)
+        if not ext:
+            print(f"Warning: Unable to determine file extension for {self.title}, using .bin as fallback.")
+            ext = ".bin"  # fallback
+
+        if not self.title.endswith(ext):
+            self.title += ext
+
+        file_path = os.path.join(download_folder, self.title)
+        if os.path.exists(file_path):
+            raise ValueError(f"File {self.title} already exists.")
         save_binary_file(response, file_path)
     
     def download_with_progress(self, download_folder="."):
         raise NotImplementedError("Not implemented yet.")
 
     def server_name(self):
-        return self.link.split("/")[2]
+        return self.detail_url.split("/")[2]
+    
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "detail_url": self.detail_url,
+            "size": self.size,
+            "source_class": self.source_class.__name__ if self.source_class else None
+        }
+
+    @staticmethod
+    def from_dict(data):
+        from datoid_downloader import Datoid_downloader
+        from sdilej_downloader import Sdilej_downloader
+        from prehrajto_downloader import Prehrajto_downloader
+
+        SOURCE_CLASS_MAP = {
+            "Sdilej_downloader": Sdilej_downloader,
+            "Datoid_downloader": Datoid_downloader,
+            "Prehrajto_downloader": Prehrajto_downloader,
+            # případně další zdroje
+        }
+        source_class = SOURCE_CLASS_MAP.get(data.get("source_class"), None)
+        if source_class is None:
+            raise ValueError("source_class is required and was not found in SOURCE_CLASS_MAP")
+        return Link_to_file(
+            data.get("title"),
+            data.get("detail_url"),
+            data.get("size"),
+            source_class
+        )
 
     def to_json(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(self.to_dict())
 
-    def from_json(self, json_str):
-        link_2_file = Link_to_file("", "", "")
-        link_2_file.__dict__ = json.loads(json_str)
-        return link_2_file
+    @staticmethod
+    def from_json(json_str):
+        data = json.loads(json_str)
+        return Link_to_file.from_dict(data)
 
     def colorize(self):
-        return f"Title: {Blue}{self.title}{NC} \nLink: {Blue}{self.link}{NC} \nSize: {Blue}{self.size}{NC}"
+        return f"Title: {Blue}{self.title}{NC} \nLink: {Blue}{self.detail_url}{NC} \nSize: {Blue}{self.size}{NC}"
 
     def __str__(self):
-        return f"Title: {self.title} \nLink: {self.link} \nSize: {self.size}"
+        return f"Title: {self.title} \nLink: {self.detail_url} \nSize: {self.size}"
 
     def __eq__(self, other):
         return (
             self.title == other.title
-            and self.link == other.link
+            and self.detail_url == other.detail_url
             and self.size == other.size
+            and self.source_class == other.source_class
         )
     
     def __hash__(self):
-        return hash((self.title, self.link, self.size))
+        return hash((self.title, self.detail_url, self.size, self.source_class))
 
 
 def load_links_from_file(file_path=JSON_FILE) -> List[Link_to_file]:
-    """
-    load files from json
-    """
     link_2_files = []
-    link_2_file = Link_to_file("", "", "")
-    with open(file_path, "r") as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         for line in file:
-            if line == "":
+            line = line.strip()
+            if not line:
                 continue
-            link_2_file = link_2_file.from_json(line)
+            link_2_file = Link_to_file.from_json(line)
             link_2_files.append(link_2_file)
     return link_2_files
 
 def save_links_to_file(link_2_files: List[Link_to_file], file_path=JSON_FILE, append=False):
-    """
-    save files to json
-    """
-    if append:
-        mode = "a"
-    else:
-        mode = "w"
-
-    with open(file_path, mode, encoding=ENCODING) as file:
+    mode = "a" if append else "w"
+    with open(file_path, mode, encoding="utf-8") as file:
         for link_2_file in link_2_files:
             file.write(link_2_file.to_json() + "\n")
 
