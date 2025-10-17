@@ -35,8 +35,9 @@ This application is intended for lawful, authorized use only. It is not intended
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
-    - [Závislosti pro vývoj](#závislosti-pro-vývoj)
     - [TODO:](#todo)
+    - [Závislosti pro vývoj](#závislosti-pro-vývoj)
+    - [Struktura projektu](#struktura-projektu)
     - [Jak sestavit exe soubor](#jak-sestavit-exe-soubor)
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
@@ -173,16 +174,42 @@ python3 main.py --tui
 
 ## Vývoj
 
-### Závislosti pro vývoj
-
-- `msgfmt`
-
 ### TODO:
 
 - Integrace s dalšími weby:
   - [x] datoid.cz,
   - [x] sdilej.cz,
   - [x] prehraj.to
+
+### Závislosti pro vývoj
+
+- `msgfmt`
+
+### Struktura projektu
+```txt
+├───assets
+├───build
+├───dist
+├───docs
+├───download
+├───locales
+│   ├───cs
+│   └───en
+├───src
+│   ├───downloader
+├───tests
+```
+
+Adresáře:
+- `assets/` - ikony a obrázky používané v aplikaci.
+- `build/` - dočasné soubory vytvořené při sestavování aplikace.
+- `dist/` - výsledný `.exe` soubor po sestavení aplikace.
+- `docs/` - vygenerovaná dokumentace projektu.
+- `download/` - výchozí složka pro stahování souborů
+- `locales/` - překladové soubory pro různé jazyky.
+- `src/` - zdrojové kódy aplikace.
+  - `downloader/` - moduly pro stahování z různých webů.
+- `tests/` - testovací skripty pro ověření funkčnosti aplikace.
 
 ### Jak sestavit exe soubor
 Pro sestavení exe souboru použijte:
