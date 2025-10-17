@@ -28,7 +28,7 @@ if %ERRORLEVEL%==0 (
         )
     )
 ) else (
-    echo msgfmt not found in PATH — skipping .po -> .mo compilation. Make sure .mo files are included in the build.
+    echo msgfmt not found in PATH — skipping .po to .mo compilation. Make sure .mo files are included in the build.
 )
 
 :: Build the application using pyinstaller
