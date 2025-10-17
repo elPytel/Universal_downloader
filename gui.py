@@ -88,7 +88,11 @@ class DownloaderGUI(tk.Tk):
         self.geometry("800x600")
         self.create_widgets()
 
-    def load_config(self, config_file=CONFIG_FILE):
+    def load_config(self, config_file=CONFIG_FILE) -> dict:
+        """
+        Load configuration from a JSON file.
+        If the file does not exist, returns an empty dictionary.
+        """
         try:
             with open(config_file, "r") as file:
                 return json.load(file)
@@ -158,12 +162,29 @@ class DownloaderGUI(tk.Tk):
         self.search_entry = ttk.Entry(search_frame)
         self.search_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
+        # file type: show translated labels but keep internal key
+        # internal vars (hold keys used by search)
         self.file_type_var = tk.StringVar(value="all")
-        self.file_type_menu = ttk.OptionMenu(search_frame, self.file_type_var, "all", *Download_page_search.file_types.keys())
+        self.search_type_var = tk.StringVar(value="relevance")
+        # display vars (hold translated label shown in OptionMenu)
+        self.file_type_display_var = tk.StringVar(value=_(self.file_type_var.get()))
+        self.search_type_display_var = tk.StringVar(value=_(self.search_type_var.get()))
+
+        # build OptionMenus using display vars; commands set both internal key and display label
+        self.file_type_menu = ttk.OptionMenu(search_frame, self.file_type_display_var, self.file_type_display_var.get())
+        menu = self.file_type_menu["menu"]
+        menu.delete(0, "end")
+        for key in Download_page_search.file_types.keys():
+            label = _(key)
+            menu.add_command(label=label, command=lambda k=key, l=label: (self.file_type_var.set(k), self.file_type_display_var.set(l)))
         self.file_type_menu.pack(side=tk.LEFT, padx=5)
 
-        self.search_type_var = tk.StringVar(value="relevance")
-        self.search_type_menu = ttk.OptionMenu(search_frame, self.search_type_var, "relevance", *Download_page_search.search_types.keys())
+        self.search_type_menu = ttk.OptionMenu(search_frame, self.search_type_display_var, self.search_type_display_var.get())
+        menu2 = self.search_type_menu["menu"]
+        menu2.delete(0, "end")
+        for key in Download_page_search.search_types.keys():
+            label = _(key)
+            menu2.add_command(label=label, command=lambda k=key, l=label: (self.search_type_var.set(k), self.search_type_display_var.set(l)))
         self.search_type_menu.pack(side=tk.LEFT, padx=5)
 
         self.max_results_label = ttk.Label(search_frame, text=_("Max Results:"))
@@ -512,7 +533,32 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("Title", text=_("Title"))
         self.results_tree.heading("Size", text=_("Size"))
         self.results_tree.heading("Link", text=_("Link"))
+        self._rebuild_type_menus()
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
+
+    def _rebuild_type_menus(self):
+        # rebuild file type menu
+        try:
+            menu = self.file_type_menu["menu"]
+            menu.delete(0, "end")
+            for key in Download_page_search.file_types.keys():
+                label = _(key)
+                menu.add_command(label=label, command=lambda k=key, l=label: (self.file_type_var.set(k), self.file_type_display_var.set(l)))
+            # update displayed label to translated value for current key
+            self.file_type_display_var.set(_(self.file_type_var.get()))
+        except Exception:
+            pass
+
+        # rebuild search type menu
+        try:
+            menu2 = self.search_type_menu["menu"]
+            menu2.delete(0, "end")
+            for key in Download_page_search.search_types.keys():
+                label = _(key)
+                menu2.add_command(label=label, command=lambda k=key, l=label: (self.search_type_var.set(k), self.search_type_display_var.set(l)))
+            self.search_type_display_var.set(_(self.search_type_var.get()))
+        except Exception:
+            pass
 
 def main():
     if not os.path.exists(JSON_FILE):

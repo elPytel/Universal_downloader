@@ -110,3 +110,34 @@ msgstr "Language changed to {}."
 
 msgid "Translation file not found!"
 msgstr "Translation file not found!"
+
+# Added keys for file/search types
+msgid "all"
+msgstr "All"
+
+msgid "video"
+msgstr "Video"
+
+msgid "audio"
+msgstr "Audio"
+
+msgid "archive"
+msgstr "Archive"
+
+msgid "images"
+msgstr "Images"
+
+msgid "relevance"
+msgstr "Relevance"
+
+msgid "most_downloaded"
+msgstr "Most downloaded"
+
+msgid "newest"
+msgstr "Newest"
+
+msgid "biggest"
+msgstr "Biggest"
+
+msgid "smallest"
+msgstr "Smallest"
