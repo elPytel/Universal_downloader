@@ -1,9 +1,9 @@
 import bs4
 import logging
 import requests
-from link_to_file import Link_to_file
+from src.link_to_file import Link_to_file
 from basic_colors import *
-from download_page_search import *
+from src.downloader.page_search import *
 
 class Datoid_downloader(Download_page_search):
     """

@@ -10,13 +10,13 @@ import threading
 import subprocess
 import tkinter as tk
 from tkinter import ttk
-from link_to_file import *
+from src.link_to_file import *
 from PIL import ImageTk
-from sdilej_downloader import Sdilej_downloader
-from datoid_downloader import Datoid_downloader
-from prehrajto_downloader import Prehrajto_downloader
+from src.downloader.sdilej import Sdilej_downloader
+from src.downloader.datoid import Datoid_downloader
+from src.downloader.prehrajto import Prehrajto_downloader
 from main import download_folder, JSON_FILE
-from download_page_search import Download_page_search, InsufficientTimeoutError
+from src.downloader.page_search import Download_page_search, InsufficientTimeoutError
 
 CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
