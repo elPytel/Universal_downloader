@@ -22,6 +22,7 @@ Slouží pro stahování souborů z webů:
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
+    - [Závislosti pro vývoj](#závislosti-pro-vývoj)
     - [TODO:](#todo)
     - [Jak sestavit exe soubor](#jak-sestavit-exe-soubor)
     - [Testování](#testování)
@@ -158,6 +159,10 @@ python3 main.py --tui
 [TUI](TUI.md)
 
 ## Vývoj
+
+### Závislosti pro vývoj
+
+- `msgfmt`
 
 ### TODO:
 

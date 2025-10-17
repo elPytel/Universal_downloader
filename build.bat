@@ -16,6 +16,21 @@ pip install --upgrade pip
 echo Installing dependencies...
 pip install -r requirements.txt
 
+:: Compile .po -> .mo if msgfmt is available
+where msgfmt >nul 2>&1
+if %ERRORLEVEL%==0 (
+    echo msgfmt found, compiling .po -> .mo...
+    for /d %%D in (locales\*) do (
+        if exist "%%D\LC_MESSAGES\universal_downloader.po" (
+            echo Compiling "%%D\LC_MESSAGES\universal_downloader.po"
+            msgfmt -o "%%D\LC_MESSAGES\universal_downloader.mo" "%%D\LC_MESSAGES\universal_downloader.po"
+            if ERRORLEVEL 1 echo Warning: msgfmt failed for %%D
+        )
+    )
+) else (
+    echo msgfmt not found in PATH — skipping .po -> .mo compilation. Make sure .mo files are included in the build.
+)
+
 :: Build the application using pyinstaller
 echo Building the application...
 pyinstaller --onefile --windowed ^

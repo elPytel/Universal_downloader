@@ -119,3 +119,34 @@ msgstr "Vymazány nevybrané soubory."
 
 msgid "Translation file not found!"
 msgstr "Překladový soubor nebyl nalezen!"
+
+# file/search types (translated)
+msgid "all"
+msgstr "Vše"
+
+msgid "video"
+msgstr "Video"
+
+msgid "audio"
+msgstr "Audio"
+
+msgid "archive"
+msgstr "Archiv"
+
+msgid "images"
+msgstr "Obrázky"
+
+msgid "relevance"
+msgstr "Podle relevance"
+
+msgid "most_downloaded"
+msgstr "Nejčastěji stahované"
+
+msgid "newest"
+msgstr "Nejnovější"
+
+msgid "biggest"
+msgstr "Největší"
+
+msgid "smallest"
+msgstr "Nejmenší"
