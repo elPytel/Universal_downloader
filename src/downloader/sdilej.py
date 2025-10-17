@@ -1,9 +1,9 @@
 from __future__ import annotations
 import bs4
-from download import *
+from src.download import *
 from basic_colors import *
-from download_page_search import *
-from link_to_file import Link_to_file, compare_sizes
+from src.downloader.page_search import *
+from src.link_to_file import Link_to_file, compare_sizes
 
 class Sdilej_downloader(Download_page_search):
     """

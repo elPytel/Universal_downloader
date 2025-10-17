@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import bs4
-from download import *
+from src.download import *
 from typing import Any, Generator
 
 def remove_style(soup: bs4.BeautifulSoup | bs4.Tag) -> bs4.BeautifulSoup | bs4.Tag:
@@ -74,7 +74,7 @@ class Download_page_search:
     
     @staticmethod
     def test_downloaded_file(link_2_file, download_folder) -> bool:
-        from link_to_file import compare_sizes
+        from src.link_to_file import compare_sizes
         
         file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
         if file_size == 0:

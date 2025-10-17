@@ -5,8 +5,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import *
-from link_to_file import Link_to_file
-from sdilej_downloader import Sdilej_downloader
+from src.link_to_file import Link_to_file
+from src.downloader.sdilej import Sdilej_downloader
 
 
 @pytest.mark.parametrize("lines, link_2_files", [

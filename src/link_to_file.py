@@ -5,10 +5,10 @@ import requests
 import mimetypes
 from urllib.parse import urlparse
 from typing import List
-from download import *
+from src.download import *
 from basic_colors import *
 
-from download_page_search import Download_page_search
+from src.downloader.page_search import Download_page_search
 
 DEBUG = True
 VERBOSE = True
@@ -134,9 +134,9 @@ class Link_to_file:
 
     @staticmethod
     def from_dict(data):
-        from datoid_downloader import Datoid_downloader
-        from sdilej_downloader import Sdilej_downloader
-        from prehrajto_downloader import Prehrajto_downloader
+        from src.downloader.datoid import Datoid_downloader
+        from src.downloader.sdilej import Sdilej_downloader
+        from src.downloader.prehrajto import Prehrajto_downloader
 
         SOURCE_CLASS_MAP = {
             "Sdilej_downloader": Sdilej_downloader,
