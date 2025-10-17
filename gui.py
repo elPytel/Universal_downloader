@@ -205,8 +205,13 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.column("Title", width=240)
         self.results_tree.column("Size", width=20)
         self.results_tree.column("Link", width=180)
-        self.results_tree.pack(fill=tk.BOTH, expand=True)
 
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_tree.yview)
+        self.results_tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.results_tree.pack(fill=tk.BOTH, expand=True)
         self.results_tree.bind("<Double-1>", self.toggle_check)
 
         # Log frame
