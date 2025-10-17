@@ -212,6 +212,36 @@ Adresáře:
   - `downloader/` - moduly pro stahování z různých webů.
 - `tests/` - testovací skripty pro ověření funkčnosti aplikace.
 
+### Závislosti pro vývoj
+
+- `msgfmt`
+
+### Struktura projektu
+```txt
+├───assets
+├───build
+├───dist
+├───docs
+├───download
+├───locales
+│   ├───cs
+│   └───en
+├───src
+│   ├───downloader
+├───tests
+```
+
+Adresáře:
+- `assets/` - ikony a obrázky používané v aplikaci.
+- `build/` - dočasné soubory vytvořené při sestavování aplikace.
+- `dist/` - výsledný `.exe` soubor po sestavení aplikace.
+- `docs/` - vygenerovaná dokumentace projektu.
+- `download/` - výchozí složka pro stahování souborů
+- `locales/` - překladové soubory pro různé jazyky.
+- `src/` - zdrojové kódy aplikace.
+  - `downloader/` - moduly pro stahování z různých webů.
+- `tests/` - testovací skripty pro ověření funkčnosti aplikace.
+
 ### Jak sestavit exe soubor
 Pro sestavení exe souboru použijte:
 - Windows: `build.bat`
