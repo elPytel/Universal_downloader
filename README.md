@@ -1,11 +1,24 @@
 # Universal downloader
 
-Slouží pro stahování souborů z webů: 
+Lze použít pro stahování souborů z webů: 
 - [datoid.cz](https://datoid.cz),
-- [sdilej.cz](https://sdilej.cz).
+- [sdilej.cz](https://sdilej.cz),
+- [prehraj.to](https://prehraj.to).
+
+## Právní upozornění
+
+> [!warning]
+Tato aplikace je určena výhradně pro legální a autorizované použití. Není určena k obcházení autorských práv ani k získávání obsahu bez výslovného souhlasu držitelů práv. Uživatelé jsou plně zodpovědní za dodržování platných zákonů a podmínek použití webových stránek, ze kterých stahují obsah. Autor ani přispěvatelé nenesou odpovědnost za jakékoli škody nebo právní následky způsobené neoprávněným použitím této aplikace.
+
+## Legal notice (English)
+
+> [!warning]
+This application is intended for lawful, authorized use only. It is not intended to circumvent copyright or to obtain content without the explicit permission of the rights holders. Users are solely responsible for complying with applicable laws and the terms of service of websites they access. The author and contributors are not liable for any damages or legal consequences resulting from improper use.
 
 ## Obsah
 - [Universal downloader](#universal-downloader)
+  - [Právní upozornění](#právní-upozornění)
+  - [Legal notice (English)](#legal-notice-english)
   - [Obsah](#obsah)
   - [Instalace závislostí](#instalace-závislostí)
     - [Pod Linuxem](#pod-linuxem)
