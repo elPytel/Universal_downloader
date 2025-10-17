@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import queue
+import shutil
 import gettext
 import argparse
 import threading
@@ -46,14 +47,26 @@ def get_resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 def compile_mo_files():
+    """
+    Compiles .po files to .mo files using msgfmt.
+    If msgfmt is not found, skips compilation (Typically on target machine with .exe).
+    """
     localedir = get_resource_path("locales")
+    msgfmt_path = shutil.which('msgfmt')
+    if not msgfmt_path:
+        print("msgfmt not found in PATH — skipping .po -> .mo compilation. Ensure .mo files are included in the build.")
+        return
+
     for lang in LANGUAGES.values():
         po_file = os.path.join(localedir, lang, 'LC_MESSAGES', DOMAIN + '.po')
         mo_file = os.path.join(localedir, lang, 'LC_MESSAGES', DOMAIN + '.mo')
         if os.path.exists(po_file):
             if not os.path.exists(mo_file) or os.path.getmtime(po_file) > os.path.getmtime(mo_file):
                 print(f"Compiling {po_file} to {mo_file}")
-                subprocess.run(['msgfmt', '-o', mo_file, po_file], check=True)
+                try:
+                    subprocess.run([msgfmt_path, '-o', mo_file, po_file], check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"msgfmt failed: {e}")
 
 class DownloaderGUI(tk.Tk):
     lang_codes = LANGUAGES.values()
@@ -100,6 +113,9 @@ class DownloaderGUI(tk.Tk):
             return {}
         
     def save_config(self, config_file=CONFIG_FILE):
+        """
+        Save configuration to a JSON file.
+        """
         with open(config_file, "w") as file:
             json.dump(self.settings, file)
 
@@ -267,6 +283,10 @@ class DownloaderGUI(tk.Tk):
             self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
 
     def start_search_thread(self):
+        """
+        Starts the search in a separate thread for each selected source.
+        Initializes a queue to collect results and starts processing the queue.
+        """
         self.searching = True
         self.result_queue = queue.Queue()
         self.threads = []
@@ -297,6 +317,10 @@ class DownloaderGUI(tk.Tk):
         self.after(100, self.process_search_queue)
 
     def process_search_queue(self):
+        """
+        Processes the result queue, adding unique results to the treeview.
+        Stops adding results if max_results is reached and sets the `stop_event`.
+        """
         added = 0
         while not self.result_queue.empty() and (not self.max_results or len(self.link_2_files) < self.max_results):
             link_2_file = self.result_queue.get()
@@ -329,6 +353,15 @@ class DownloaderGUI(tk.Tk):
         return [self.link_map[link] for link in selected_links if link in self.link_map]
 
     def download_selected(self):
+        """
+        Downloads the selected files. With respect to individual source class download methods and timeouts.
+        1. Gets selected ``Link_to_file`` objects.
+        2. For each file:
+              - Checks if the file already exists.
+              - Downloads the file.
+              - Tests the downloaded file.
+              - Logs success or failure.
+        """
         self.log(_("Download initiated..."), "info")
         
         link_2_files = self.get_selected_link_2_files()
@@ -547,6 +580,7 @@ class DownloaderGUI(tk.Tk):
             # update displayed label to translated value for current key
             self.file_type_display_var.set(_(self.file_type_var.get()))
         except Exception:
+            print_error("Error rebuilding {Blue}file type{NC} menus.")
             pass
 
         # rebuild search type menu
@@ -558,14 +592,17 @@ class DownloaderGUI(tk.Tk):
                 menu2.add_command(label=label, command=lambda k=key, l=label: (self.search_type_var.set(k), self.search_type_display_var.set(l)))
             self.search_type_display_var.set(_(self.search_type_var.get()))
         except Exception:
+            print_error("Error rebuilding {Blue}search type{NC} menus.")
             pass
 
 def main():
     if not os.path.exists(JSON_FILE):
         open(JSON_FILE, 'w').close()
+        print_info(f"Created empty JSON file at {JSON_FILE}")
     
     if not os.path.exists(download_folder):
         os.makedirs(download_folder)
+        print_info(f"Created download folder at {download_folder}")
     
     compile_mo_files()
     localedir = get_resource_path("locales")
