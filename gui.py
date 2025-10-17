@@ -250,6 +250,8 @@ class DownloaderGUI(tk.Tk):
 
         self.results_tree.pack(fill=tk.BOTH, expand=True)
         self.results_tree.bind("<Double-1>", self.toggle_check)
+        # Right-click on Link column copies the download URL to clipboard (Windows: Button-3)
+        self.results_tree.bind("<Button-3>", self.on_right_click_copy_link)
 
         # Log frame
         self.log_frame = ttk.Frame(self)
@@ -281,6 +283,29 @@ class DownloaderGUI(tk.Tk):
             self.check_vars[i] = select_all
             item = self.results_tree.get_children()[i]
             self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
+    
+    def on_right_click_copy_link(self, event):
+        """
+        Right-click handler: if clicked cell is in the Link column, copy URL to clipboard.
+        """
+        try:
+            region = self.results_tree.identify_region(event.x, event.y)
+            col = self.results_tree.identify_column(event.x)  # e.g. "#4" for 4th column
+            if region != "cell" or col != "#4":
+                return
+            row = self.results_tree.identify_row(event.y)
+            if not row:
+                return
+            values = self.results_tree.item(row, "values")
+            if len(values) < 4:
+                return
+            link = values[3]
+            # copy to clipboard
+            self.clipboard_clear()
+            self.clipboard_append(link)
+            self.log(_("Link copied to clipboard: {}").format(link), "info")
+        except Exception as e:
+            self.log(_("Failed to copy link: {}").format(e), "error")
 
     def start_search_thread(self):
         """
