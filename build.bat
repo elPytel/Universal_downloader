@@ -19,7 +19,7 @@ pip install -r requirements.txt
 :: Compile .po -> .mo if msgfmt is available
 where msgfmt >nul 2>&1
 if %ERRORLEVEL%==0 (
-    echo msgfmt found, compiling .po -> .mo...
+    echo msgfmt found, compiling .po to .mo...
     for /d %%D in (locales\*) do (
         if exist "%%D\LC_MESSAGES\universal_downloader.po" (
             echo Compiling "%%D\LC_MESSAGES\universal_downloader.po"
