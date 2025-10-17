@@ -5,10 +5,10 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bs4
 
-from download import *
-from link_to_file import Link_to_file
-from sdilej_downloader import Sdilej_downloader
-from download_page_search import InsufficientTimeoutError
+from src.download import *
+from src.link_to_file import Link_to_file
+from src.downloader.sdilej import Sdilej_downloader
+from src.downloader.page_search import InsufficientTimeoutError
 
 @pytest.mark.parametrize("page, link_2_file", [
     (

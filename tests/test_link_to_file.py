@@ -5,8 +5,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from main import *
-from link_to_file import Link_to_file
-from sdilej_downloader import Sdilej_downloader
+from src.link_to_file import Link_to_file
+from src.downloader.sdilej import Sdilej_downloader
 
 
 @pytest.mark.parametrize("lines, link_2_files", [
@@ -49,7 +49,8 @@ def test_from_json(lines, link_2_files):
     ("file.name.with.dots", ".dots"),
     ("file.name.with.dots.", "."),
     ("Karel Čapek - Apokryfy (2008).mp3", ".mp3"),
-    ("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", ".mp3")
+    ("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", ".mp3"),
+    ("Karel Čapek - Dášenka čili život štěněte (audiokniha).rar", ".rar")
 ])
 def test_get_extension_from_title(file, ext):
     assert get_extension_from_title(file) == ext

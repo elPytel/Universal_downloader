@@ -5,8 +5,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import bs4
-from link_to_file import Link_to_file
-from prehrajto_downloader import *
+from src.link_to_file import Link_to_file
+from src.downloader.prehrajto import *
 
 # obsah stránky s výsledky hledání
 """

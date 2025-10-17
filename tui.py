@@ -1,6 +1,6 @@
 import pytermgui as ptg
-import sdilej_downloader
-from link_to_file import *
+import src.downloader.sdilej as sdilej
+from src.link_to_file import *
 
 LINKS = []
 
@@ -40,7 +40,7 @@ def search(manager: ptg.WindowManager):
     search:
     prompt: search, drop_down: file_type, drop_down: search_type
     """
-    downloader = sdilej_downloader.Sdilej_downloader
+    downloader = sdilej.Sdilej_downloader
     file_types = downloader.file_types.keys()
     search_types = downloader.search_types.keys()
     file_type = "all"

@@ -10,11 +10,11 @@ import queue
 import argparse 
 import threading
 from time import sleep
-from link_to_file import *
-from sdilej_downloader import Sdilej_downloader
-from datoid_downloader import Datoid_downloader
-from prehrajto_downloader import Prehrajto_downloader
-from download_page_search import Download_page_search
+from src.link_to_file import *
+from src.downloader.sdilej import Sdilej_downloader
+from src.downloader.datoid import Datoid_downloader
+from src.downloader.prehrajto import Prehrajto_downloader
+from src.downloader.page_search import Download_page_search
 
 JSON_FILE = "files.json"
 FAILED_FILES = "failed_files.json"
