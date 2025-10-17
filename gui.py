@@ -422,8 +422,10 @@ class DownloaderGUI(tk.Tk):
                 if os.path.exists(target_path):
                     os.remove(target_path)
                     self.log(_("File {} was removed.").format(link_2_file.title), "info")
-
-            time.sleep(timeout)
+            
+            if not q.empty():
+                self.log(_("Waiting for {} seconds...").format(timeout), "info")
+                time.sleep(timeout)
 
     def download_selected(self):
         """

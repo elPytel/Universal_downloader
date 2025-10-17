@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 import bs4
 from src.download import *
 from basic_colors import *
@@ -10,6 +11,14 @@ class Sdilej_downloader(Download_page_search):
     Downloader from: sdilej.cz
     """
     webpage = "https://sdilej.cz"
+
+    logger = logging.getLogger("Sdilej_downloader")
+    if not logger.hasHandlers():
+        handler = logging.FileHandler("sdilej_downloader.log", encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
     
     def __init__(self):
         pass

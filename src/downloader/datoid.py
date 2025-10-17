@@ -30,8 +30,11 @@ class Datoid_downloader(Download_page_search):
         if prompt is None or prompt.strip() == "":
             raise ValueError("Prompt cannot be empty.")
         url = Datoid_downloader.generate_search_url(prompt, file_type, search_type)
-        page = download_page(url)
-        return Datoid_downloader.parse_catalogue(page)
+        Datoid_downloader.logger.info(f"Searching Datoid with URL: {url}")
+        response = download_page(url)
+        Datoid_downloader.logger.info(f"Response received: {response.status_code}")
+        return Datoid_downloader.parse_catalogue(response)
+    # TODO: implement next page
     
     @staticmethod
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
