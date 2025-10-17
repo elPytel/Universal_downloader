@@ -55,14 +55,14 @@ def compare_sizes(size1 : int, size2 : int, precision=0.1) -> bool:
 
 def get_extension_from_title(title: str) -> str | None:
     """
-    Vrátí příponu souboru z názvu, včetně tečky (např. '.mp4'), nebo None pokud není.
+    Returns the file extension from the title, including the dot (e.g. '.mp4'), or None if there is none.
     """
     _, ext = os.path.splitext(title)
     return ext if ext else None
 
 def get_extension_from_url(url: str) -> str | None:
     """
-    Vrátí příponu souboru z URL, včetně tečky (např. '.mp4'), nebo None pokud není.
+    Returns the file extension from a URL, including the dot (e.g. '.mp4'), or None if there is none.
     """
     path = urlparse(url).path
     _, ext = os.path.splitext(path)
@@ -107,8 +107,8 @@ class Link_to_file:
         if not ext:
             ext = get_extension_from_url(self.detail_url)
         if not ext:
-            print(f"Warning: Unable to determine file extension for {self.title}, using .bin as fallback.")
-            ext = ".bin"  # fallback
+            ext = ""  # fallback
+            print(f"Warning: Unable to determine file extension for {self.title}, using {ext} as fallback.")
 
         if not self.title.endswith(ext):
             self.title += ext

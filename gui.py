@@ -343,80 +343,108 @@ class DownloaderGUI(tk.Tk):
             self.searching = False
 
     def start_download_thread(self):
-        threading.Thread(target=self.download_selected).start()
-
-    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        threading.Thread(target=self.download_selected, daemon=True).start()
+    
+    def download_worker(self, q: queue.Queue, timeout: int, success_list: list, success_lock: threading.Lock):
         """
-        Returns a list of Link_to_file objects for the selected items in the results treeview.
-        """
-        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        return [self.link_map[link] for link in selected_links if link in self.link_map]
-
-    def download_selected(self):
-        """
-        Downloads the selected files. With respect to individual source class download methods and timeouts.
-        1. Gets selected ``Link_to_file`` objects.
-        2. For each file:
-              - Checks if the file already exists.
-              - Downloads the file.
-              - Tests the downloaded file.
-              - Logs success or failure.
-        """
-        self.log(_("Download initiated..."), "info")
+        Worker function to download files from the queue.
         
-        link_2_files = self.get_selected_link_2_files()
-        if not link_2_files:
-            self.log(_("No files selected for download."), "warning")
-            return
-        
-        self.log(_("Number of files to download: {}").format(len(link_2_files)), "info")
-            
-        # Stahování
-        successfull_files = []
-        while len(link_2_files) > 0:
-            link_2_file = link_2_files.pop(0)
+        Args:
+            q (queue.Queue): Queue containing Link_to_file objects to download.
+            timeout (int): Timeout between downloads.
+            success_list (list): Shared list to store successfully downloaded files.
+            success_lock (threading.Lock): Lock to synchronize access to success_list.
+        """
+        while not q.empty():
+            link_2_file = q.get()
+
             # test if file exists
-            if os.path.exists(f"{download_folder}/{link_2_file.title}"):
+            target_path = f"{download_folder}/{link_2_file.title}"
+            if os.path.exists(target_path):
                 self.log(_("File {} already exists.").format(link_2_file.title), "warning")
-                successfull_files.append(link_2_file)
+                with success_lock:
+                    success_list.append(link_2_file)
                 continue
-            
+
             self.log(_("Downloading file: {} of size {}...").format(link_2_file.title, link_2_file.size), "info")
 
-            link_2_file.download(download_folder)
-
-            # test downloaded file
-            file_size = None
             try:
-                file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+                link_2_file.download(download_folder)
+
+                file_size = os.path.getsize(target_path)
                 if link_2_file.source_class.test_downloaded_file(link_2_file, download_folder):
-                    successfull_files.append(link_2_file)
+                    with success_lock:
+                        success_list.append(link_2_file)
                     self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
                     self.remove_from_results([link_2_file])
             except ValueError as e:
-                # Wrong file size
                 self.log(_("Error: {}").format(e), "error")
                 self.log(_("File {} was not downloaded correctly.").format(link_2_file.title), "error")
-                self.log(_("File size: {} expected: {}").format(file_size, link_2_file.size), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
             except InsufficientTimeoutError as e:
-                # Timeout error
                 self.log(_("Error: {}").format(e), "error")
                 self.log(_("File {} was not downloaded at all.").format(link_2_file.title), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
                 if self.add_files_with_failed_timeout_var.get():
-                    link_2_files.append(link_2_file)
+                    q.put(link_2_file)
                     self.log(_("File {} was added back to the list.").format(link_2_file.title), "info")
             except Exception as e:
-                # Other error
                 self.log(_("Error: {}").format(e), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
-                
-            time.sleep(TIME_OUT)
-        
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
+
+            time.sleep(timeout)
+
+    def download_selected(self):
+        """
+        Downloads all selected `Link_to_file` objects using worker threads.
+
+        1. loads selected `Link_to_file` objects,
+        2. groups them by `source_class`,
+        3. starts a worker thread for each group to download files with appropriate timeout,
+        4. waits for all threads to complete,
+        5. removes successfully downloaded files from the results and JSON file if configured.
+
+        """
+        self.log(_("Download initiated..."), "info")
+
+        selected = self.get_selected_link_2_files()
+        if not selected:
+            self.log(_("No files selected for download."), "warning")
+            return
+
+        self.log(_("Number of files to download: {}").format(len(selected)), "info")
+
+        # Seskupit podle source_class
+        groups: dict = {}
+        for l in selected:
+            groups.setdefault(l.source_class, []).append(l)
+
+        threads = []
+        successfull_files: list = []
+        success_lock = threading.Lock()
+
+        for source_class, items in groups.items():
+            q = queue.Queue()
+            for it in items:
+                q.put(it)
+
+            # najít timeout pro daný zdroj
+            timeout = next((s["timeout"] for s in SOURCES if s["class"] == source_class), TIME_OUT)
+
+            t = threading.Thread(target=self.download_worker, args=(q, timeout, successfull_files, success_lock), daemon=True)
+            t.start()
+            threads.append(t)
+
+        # počkat na dokončení všech worker vláken
+        for t in threads:
+            t.join()
+
         self.log(_("Downloaded files: {}").format(len(successfull_files)), "success")
 
         if self.remove_successful_var.get():
@@ -477,6 +505,38 @@ class DownloaderGUI(tk.Tk):
                 self.results_tree.delete(item)
                 self.link_map.pop(link, None)
 
+    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        """
+        Returns a list of Link_to_file objects corresponding to currently checked items in the results treeview.
+        If a selected link is missing from link_map, creates a safe fallback Link_to_file object.
+        """
+        selected_links = []
+        # guard access to self.check_vars in case of mismatch between treeview children and check_vars length
+        for i, item in enumerate(self.results_tree.get_children()):
+            if i < len(self.check_vars) and self.check_vars[i]:
+                try:
+                    link = self.results_tree.item(item)["values"][3]
+                except Exception:
+                    continue
+                selected_links.append(link)
+
+        result = []
+        for link in selected_links:
+            l2f = self.link_map.get(link)
+            if l2f is None:
+                # Fallback: create a minimal Link_to_file object if map is missing entry
+                # Use link as title and unknown size; Download_page_search as a neutral source_class
+                self.log(_("Warning: Selected link {} not found in map, creating fallback object.").format(link), "warning")
+                try:
+                    fallback = Link_to_file(link, link, "unknown", Download_page_search)
+                    result.append(fallback)
+                except Exception:
+                    # If construction fails, skip the entry
+                    self.log(_("Failed to create fallback for {}").format(link), "error")
+            else:
+                result.append(l2f)
+        return result
+
     def save_selected(self):
         """
         Loads selected items from the results treeview.
@@ -485,8 +545,7 @@ class DownloaderGUI(tk.Tk):
         """
         self.log(_("Saving selected items..."), "info")
 
-        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        link_2_files = [self.link_map[link] for link in selected_links if link in self.link_map]
+        link_2_files = self.get_selected_link_2_files()
         save_links_to_file(link_2_files, JSON_FILE)
 
         self.log(_("Saved items: {}").format(len(link_2_files)), "success")

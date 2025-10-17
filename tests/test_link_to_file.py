@@ -49,7 +49,8 @@ def test_from_json(lines, link_2_files):
     ("file.name.with.dots", ".dots"),
     ("file.name.with.dots.", "."),
     ("Karel Čapek - Apokryfy (2008).mp3", ".mp3"),
-    ("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", ".mp3")
+    ("MLUVENÉ SLOVO Čapek, Karel Továrna na absolutno.mp3", ".mp3"),
+    ("Karel Čapek - Dášenka čili život štěněte (audiokniha).rar", ".rar")
 ])
 def test_get_extension_from_title(file, ext):
     assert get_extension_from_title(file) == ext
