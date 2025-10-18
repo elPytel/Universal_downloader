@@ -1,4 +1,5 @@
 import bs4
+import urllib.parse
 import logging
 import requests
 from src.link_to_file import Link_to_file
@@ -123,6 +124,10 @@ class Datoid_downloader(Download_page_search):
             Datoid_downloader.logger.error(f"Failed to decode JSON response for detail URL: {detail_url}. Error: {e}")
             raise ValueError("Failed to decode JSON response.") from e
         
+        if "error" in json_response:
+            Datoid_downloader.logger.error(f"JSON response: {json_response['error']} for detail URL: {detail_url}")
+            raise ValueError("No free slots available.")
+
         if "download_link" in json_response and json_response["download_link"]:
             return json_response["download_link"]
         else:
@@ -132,21 +137,39 @@ class Datoid_downloader(Download_page_search):
     @staticmethod
     def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
         """
-        Postupně prochází stránku s výsledky vyhledávání a vrací informace o souborech.
+        Iterates through the search results page and returns information about files.
 
-        yield: Link_to_file
+        Yields: Link_to_file
         """
-        soup = bs4.BeautifulSoup(page.text, "html.parser")
-        content = soup.find("ul", class_="list", id="snippet--search_files")
-        if content is None:
-            return None
-        content = remove_style(content)
-        for videobox in content.find_all("li"):
-            catalogue_file = None
-            try:
-                catalogue_file = Datoid_downloader.get_atributes_from_catalogue(videobox)
-                download_page_content = Datoid_downloader.parse_file_page(download_page(catalogue_file.detail_url))
-                link_2_file = Datoid_downloader.get_atributes_from_file_page(download_page_content)
-                yield link_2_file
-            except ValueError as e:
-                print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)
+        def process_soup_and_yield(soup_obj):
+            content = soup_obj.find("ul", class_="list", id="snippet--search_files")
+            if content is None:
+                return None
+            content = remove_style(content)
+            for videobox in content.find_all("li"):
+                catalogue_file = None
+                try:
+                    catalogue_file = Datoid_downloader.get_atributes_from_catalogue(videobox)
+                    download_page_content = Datoid_downloader.parse_file_page(download_page(catalogue_file.detail_url))
+                    link_2_file = Datoid_downloader.get_atributes_from_file_page(download_page_content)
+                    yield link_2_file
+                except ValueError as e:
+                    print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)
+        
+        def find_next_url(soup_obj):
+            # <a href="/s/zaklinac/2" class="next ajax">Další</a>
+            a = soup_obj.find("a", class_="next ajax")
+            if not a:
+                return None
+            href = a.get("href", "").strip()
+            if not href:
+                return None
+            return urllib.parse.urljoin(Datoid_downloader.webpage, href)
+        
+        while True:
+            soup = bs4.BeautifulSoup(page.text, "html.parser")
+            yield from process_soup_and_yield(soup)
+            next_url = find_next_url(soup)
+            if not next_url:
+                break
+            page = download_page(next_url)
