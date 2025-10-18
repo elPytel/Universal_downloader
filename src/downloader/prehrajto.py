@@ -121,9 +121,20 @@ class Prehrajto_downloader(Download_page_search):
     def get_atributes_from_file_page(soup) -> "Link_to_file":
         """
         Parse file page parameters and return Link_to_file(title, url, size, Prehrajto_downloader).
-        Tries to extract "Název souboru", "Velikost" and "Formát" from the params list.
-        If format is present and the filename doesn't already end with that extension, it is appended.
+        Accepts either a BeautifulSoup object, a requests.Response, or raw HTML/text.
         """
+        # Accept Response or raw HTML as input — normalize to BeautifulSoup
+        if not isinstance(soup, bs4.BeautifulSoup):
+            if hasattr(soup, "text"):
+                html = soup.text or ""
+            else:
+                html = soup or ""
+            if isinstance(html, bytes):
+                try:
+                    html = html.decode("utf-8", errors="ignore")
+                except Exception:
+                    html = str(html)
+            soup = bs4.BeautifulSoup(html, "html.parser")
 
         def find_label_span(regex):
             return soup.find("span", string=re.compile(regex, re.I))
@@ -205,15 +216,19 @@ class Prehrajto_downloader(Download_page_search):
             # Hledáme grid, který má potomky <div> s <a class="video--link">
             for div in grid.find_all("div", recursive=False):
                 a_tag = div.find("a", class_="video--link")
+                link_2_file = None
                 if a_tag:
                     try:
                         link_2_file = Prehrajto_downloader.get_atributes_from_catalogue(div)
                         #download_page_content = Prehrajto_downloader.parse_file_page(download_page(link_2_file.detail_url))
-                        link_2_file = Prehrajto_downloader.get_atributes_from_file_page(download_page(link_2_file.detail_url))
+                        detail_page = download_page(link_2_file.detail_url)
+                        if not Prehrajto_downloader.is_valid_download_page(detail_page):
+                            raise ValueError(f"Status code: {detail_page.status_code}. Invalid download page: no file to download.")
+                        link_2_file = Prehrajto_downloader.get_atributes_from_file_page(detail_page)
                         if link_2_file:
                             yield link_2_file
                     except ValueError as e:
-                        print_error(str(e) + " for file: " + (link_2_file.title if link_2_file else "Unknown"), False)
+                        print_error(f"{str(e)} for file: {(link_2_file.title if link_2_file else 'Unknown')}", False)
     
     @staticmethod
     def get_download_link_from_detail(detail_url: str) -> str:

@@ -11,7 +11,6 @@ import subprocess
 import tkinter as tk
 from tkinter import ttk
 from src.link_to_file import *
-from PIL import ImageTk
 from src.downloader.sdilej import Sdilej_downloader
 from src.downloader.datoid import Datoid_downloader
 from src.downloader.prehrajto import Prehrajto_downloader
