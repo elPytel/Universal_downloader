@@ -1,7 +1,9 @@
 """
 Aplikace pro stahování souborů z internetu.
-Zdroje:
+Ze stránek jako:
 - https://sdilej.cz
+- https://datoid.cz
+- https://prehrajto.cz
 """
 
 import os

@@ -42,13 +42,10 @@ class Prehrajto_downloader(Download_page_search):
         url = Prehrajto_downloader.generate_search_url(prompt, file_type, search_type)
         Prehrajto_downloader.logger.info(f"Searching Prehrajto with URL: {url}")
         response = requests.get(url)
-        Prehrajto_downloader.logger.info(f"Response received: {response.status_code}")
         page = response.text
         if response.status_code != 200:
             raise ValueError(f"Failed to retrieve search results, status code: {response.status_code} for URL: {url}")
         return Prehrajto_downloader.parse_catalogue(page)
-    # TODO: implement next page
-    # https://prehraj.to/hledej/zaklínač?vp-page=2
     
     @staticmethod
     def is_valid_download_page(page) -> bool:
@@ -209,27 +206,52 @@ class Prehrajto_downloader(Download_page_search):
         Prochází stránku s výsledky vyhledávání (nový formát s <div>) a vrací informace o souborech.
         yield: Link_to_file
         """
+
+        def find_next_url(soup_obj):
+            """
+            <a href="/hledej/zakl%C3%ADna%C4%8D?vp-page=2" title="Zobrazit další" class="button cta cta--small">Zobrazit další</a>
+            """
+            a = soup_obj.find("a", class_=re.compile(r"\bbutton\b.*\bcta\b.*\bcta--small\b"), string=re.compile(r"Zobrazit další", re.I))
+            if not a:
+                return None
+            href = a.get("href", "").strip()
+            if not href:
+                return None
+            return urllib.parse.urljoin(Prehrajto_downloader.webpage, href)
+        
+        def process_soup_and_yield(soup_obj):
+            grids = soup_obj.find_all("div", class_="grid-x")
+            for grid in grids:
+                for div in grid.find_all("div", recursive=False):
+                    a_tag = div.find("a", class_="video--link")
+                    link_2_file = None
+                    if a_tag:
+                        try:
+                            link_2_file = Prehrajto_downloader.get_atributes_from_catalogue(div)
+                            detail_page = download_page(link_2_file.detail_url)
+                            if not Prehrajto_downloader.is_valid_download_page(detail_page):
+                                raise ValueError(f"Status code: {detail_page.status_code}. Invalid download page: no file to download.")
+                            link_2_file = Prehrajto_downloader.get_atributes_from_file_page(detail_page)
+                            if link_2_file:
+                                yield link_2_file
+                        except ValueError as e:
+                            print_error(f"{str(e)} for file: {(link_2_file.title if link_2_file else 'Unknown')}", False)
+
         soup = bs4.BeautifulSoup(page, "html.parser")
-        # Najdi grid s výsledky (má více tříd)
-        grids = soup.find_all("div", class_="grid-x")
-        for grid in grids:
-            # Hledáme grid, který má potomky <div> s <a class="video--link">
-            for div in grid.find_all("div", recursive=False):
-                a_tag = div.find("a", class_="video--link")
-                link_2_file = None
-                if a_tag:
-                    try:
-                        link_2_file = Prehrajto_downloader.get_atributes_from_catalogue(div)
-                        #download_page_content = Prehrajto_downloader.parse_file_page(download_page(link_2_file.detail_url))
-                        detail_page = download_page(link_2_file.detail_url)
-                        if not Prehrajto_downloader.is_valid_download_page(detail_page):
-                            raise ValueError(f"Status code: {detail_page.status_code}. Invalid download page: no file to download.")
-                        link_2_file = Prehrajto_downloader.get_atributes_from_file_page(detail_page)
-                        if link_2_file:
-                            yield link_2_file
-                    except ValueError as e:
-                        print_error(f"{str(e)} for file: {(link_2_file.title if link_2_file else 'Unknown')}", False)
-    
+        yield from process_soup_and_yield(soup)
+        
+        next_url = find_next_url(soup)
+        if next_url:
+            try:
+                resp = requests.get(next_url)
+                if resp.status_code != 200:
+                    print_error(f"Failed to retrieve search results, status code: {resp.status_code} for URL: {next_url}", False)
+                else:
+                    #TODO: remove recursion. Use loop instead.
+                    yield from Prehrajto_downloader.parse_catalogue(resp.text)
+            except Exception as e:
+                print_error(f"Failed to fetch next page {next_url}: {e}", False)
+
     @staticmethod
     def get_download_link_from_detail(detail_url: str) -> str:
         return f"{detail_url}?do=download"
