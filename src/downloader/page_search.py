@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import re
 import bs4
 from src.download import *
 from typing import Any, Generator
@@ -18,6 +19,48 @@ def remove_empty_lines(text: Any) -> str:
     """
     if isinstance(text, str):
         return "\n".join([line for line in text.split("\n") if line.strip() != ""])
+    return ""
+
+def normalize_to_beautifulsoup(soup: bs4.BeautifulSoup | bs4.Tag | requests.Response | str | bytes) -> bs4.BeautifulSoup:
+    """
+    Normalize input to a BeautifulSoup object.
+    """
+    if not isinstance(soup, bs4.BeautifulSoup):
+        if hasattr(soup, "text"):
+            html = soup.text or ""
+        else:
+            html = soup or ""
+        if isinstance(html, bytes):
+            try:
+                html = html.decode("utf-8", errors="ignore")
+            except Exception:
+                html = str(html)
+        soup = bs4.BeautifulSoup(html, "html.parser")
+    return soup
+
+def find_label_span_by_regex(soup, regex) -> bs4.Tag | None:
+    """
+    Finds a <span> whose text matches the given regex.
+    """
+    return soup.find("span", string=re.compile(regex, re.I))
+
+def extract_value_from_label(label_span):
+    """
+    Extracts the value associated with a label span.
+    It first looks for the next sibling <span>, and if not found, it checks the same <li> for a second <span>.
+    """
+    if not label_span:
+        return ""
+    # preferred: the following sibling <span>
+    val_span = label_span.find_next_sibling("span")
+    if val_span and val_span.get_text(strip=True):
+        return val_span.get_text(strip=True)
+    # fallback: same <li> second span
+    li = label_span.find_parent("li")
+    if li:
+        spans = li.find_all("span")
+        if len(spans) >= 2 and spans[1].get_text(strip=True):
+            return spans[1].get_text(strip=True)
     return ""
 
 def any_text_coresponds_to(text, texts) -> bool:

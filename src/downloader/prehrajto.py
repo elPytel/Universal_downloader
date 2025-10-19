@@ -121,39 +121,11 @@ class Prehrajto_downloader(Download_page_search):
         Accepts either a BeautifulSoup object, a requests.Response, or raw HTML/text.
         """
         # Accept Response or raw HTML as input — normalize to BeautifulSoup
-        if not isinstance(soup, bs4.BeautifulSoup):
-            if hasattr(soup, "text"):
-                html = soup.text or ""
-            else:
-                html = soup or ""
-            if isinstance(html, bytes):
-                try:
-                    html = html.decode("utf-8", errors="ignore")
-                except Exception:
-                    html = str(html)
-            soup = bs4.BeautifulSoup(html, "html.parser")
+        soup = normalize_to_beautifulsoup(soup)
 
-        def find_label_span(regex):
-            return soup.find("span", string=re.compile(regex, re.I))
-
-        def extract_value_from_label(label_span):
-            if not label_span:
-                return ""
-            # preferred: the following sibling <span>
-            val_span = label_span.find_next_sibling("span")
-            if val_span and val_span.get_text(strip=True):
-                return val_span.get_text(strip=True)
-            # fallback: same <li> second span
-            li = label_span.find_parent("li")
-            if li:
-                spans = li.find_all("span")
-                if len(spans) >= 2 and spans[1].get_text(strip=True):
-                    return spans[1].get_text(strip=True)
-            return ""
-
-        name_label = find_label_span(r'^\s*Název souboru[:\s]*$')
-        size_label = find_label_span(r'^\s*Velikost[:\s]*$')
-        format_label = find_label_span(r'^\s*Formát[:\s]*$')
+        name_label = find_label_span_by_regex(soup, r'^\s*Název souboru[:\s]*$')
+        size_label = find_label_span_by_regex(soup, r'^\s*Velikost[:\s]*$')
+        format_label = find_label_span_by_regex(soup, r'^\s*Formát[:\s]*$')
 
         name = extract_value_from_label(name_label)
         size = extract_value_from_label(size_label)
@@ -180,7 +152,7 @@ class Prehrajto_downloader(Download_page_search):
             else:
                 detail_url = clean
 
-        return Link_to_file(name, detail_url, size, Prehrajto_downloader)
+        return Link_to_file(name, detail_url, size, Prehrajto_downloader)    
 
     @staticmethod
     def get_atributes_from_catalogue(soup) -> Link_to_file:

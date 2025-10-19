@@ -180,7 +180,7 @@ python3 main.py --tui
   - [x] datoid.cz,
   - [x] sdilej.cz,
   - [x] prehraj.to
-- [ ] Prohlédávání dalších listů výsledků vyhledávání.
+- [x] Prohlédávání dalších listů výsledků vyhledávání.
 
 ### Závislosti pro vývoj
 
