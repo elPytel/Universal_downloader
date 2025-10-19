@@ -35,7 +35,6 @@ class Datoid_downloader(Download_page_search):
         response = download_page(url)
         Datoid_downloader.logger.info(f"Response received: {response.status_code}")
         return Datoid_downloader.parse_catalogue(response)
-    # TODO: implement next page
     
     @staticmethod
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
