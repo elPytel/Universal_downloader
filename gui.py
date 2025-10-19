@@ -32,6 +32,9 @@ SOURCES = [
     {"name": "Prehraj.to", "class": Prehrajto_downloader, "timeout": TIME_OUT},
 ]
 
+# map source class -> display name for quick lookup
+CLASS_NAME_MAP = {s["class"]: s["name"] for s in SOURCES}
+
 DOMAIN = 'universal_downloader'
 ICON_FILE = 'icon.png'
 ASSETS_DIR = 'assets'
@@ -232,15 +235,15 @@ class DownloaderGUI(tk.Tk):
         self.results_frame = ttk.Frame(self)
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-        self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Link"), show="headings")
+        self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Source"), show="headings")
         self.results_tree.heading("check", text=_("Select"), command=lambda: self.sort_treeview("check", False))
         self.results_tree.heading("Title", text=_("Title"), command=lambda: self.sort_treeview("Title", False))
         self.results_tree.heading("Size", text=_("Size"), command=lambda: self.sort_treeview("Size", False))
-        self.results_tree.heading("Link", text=_("Link"))
+        self.results_tree.heading("Source", text=_("Source"))
         self.results_tree.column("check", width=10, anchor="center")
         self.results_tree.column("Title", width=240)
         self.results_tree.column("Size", width=20)
-        self.results_tree.column("Link", width=180)
+        self.results_tree.column("Source", width=140)
 
         # Scrollbar
         scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_tree.yview)
@@ -285,20 +288,20 @@ class DownloaderGUI(tk.Tk):
     
     def on_right_click_copy_link(self, event):
         """
-        Right-click handler: if clicked cell is in the Link column, copy URL to clipboard.
+        Right-click handler: if clicked cell is in the Source column, copy underlying detail URL to clipboard.
         """
         try:
             region = self.results_tree.identify_region(event.x, event.y)
             col = self.results_tree.identify_column(event.x)  # e.g. "#4" for 4th column
+            # Source is the 4th column (#4)
             if region != "cell" or col != "#4":
                 return
+            # identify_row returns the item id (we store detail_url as iid)
             row = self.results_tree.identify_row(event.y)
             if not row:
                 return
-            values = self.results_tree.item(row, "values")
-            if len(values) < 4:
-                return
-            link = values[3]
+            # use iid (row) as the real detail_url
+            link = row
             # copy to clipboard
             self.clipboard_clear()
             self.clipboard_append(link)
@@ -482,13 +485,17 @@ class DownloaderGUI(tk.Tk):
         Yields Link_to_file objects from the results treeview.
         """
         for item in self.results_tree.get_children():
-            check, title, size, link = self.results_tree.item(item)["values"]
-            l2f = self.link_map.get(link)
+            # item is iid == detail_url
+            detail_url = item
+            l2f = self.link_map.get(detail_url)
             if l2f is not None:
                 yield l2f
             else:
+                vals = self.results_tree.item(item)["values"]
+                title = vals[1] if len(vals) > 1 else detail_url
+                size = vals[2] if len(vals) > 2 else "unknown"
                 self.log(_("Warning: Link not found in map, creating new Link_to_file object."), "warning")
-                yield Link_to_file(title, link, size, Download_page_search) # Fallback, should not happen
+                yield Link_to_file(title, detail_url, size, Download_page_search) # Fallback
 
     def replace_results(self, link_2_files):
         """
@@ -499,9 +506,11 @@ class DownloaderGUI(tk.Tk):
         self.check_vars = [False for _ in link_2_files]
         self.link_map.clear()
         for i, link_2_file in enumerate(link_2_files):
+            source_name = CLASS_NAME_MAP.get(link_2_file.source_class, getattr(link_2_file.source_class, "__name__", "Unknown"))
+            # store detail_url as iid so we can later retrieve the real link even if we display Source
             self.results_tree.insert(
-                "", "end",
-                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                "", "end", iid=link_2_file.detail_url,
+                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
                 tags=(str(i),)
             )
             self.link_map[link_2_file.detail_url] = link_2_file
@@ -514,9 +523,10 @@ class DownloaderGUI(tk.Tk):
         existing_links = set(self.link_map.keys())
         for link_2_file in link_2_files:
             if link_2_file.detail_url not in existing_links:
+                source_name = CLASS_NAME_MAP.get(link_2_file.source_class, getattr(link_2_file.source_class, "__name__", "Unknown"))
                 self.results_tree.insert(
-                    "", "end",
-                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
+                    "", "end", iid=link_2_file.detail_url,
+                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
                     tags=(str(len(self.check_vars)),)
                 )
                 self.check_vars.append(False)
@@ -525,11 +535,11 @@ class DownloaderGUI(tk.Tk):
 
     def remove_from_results(self, link_2_files):
         links_to_remove = {l.detail_url for l in link_2_files}
-        for item in self.results_tree.get_children():
-            _, title, size, link = self.results_tree.item(item)["values"]
-            if link in links_to_remove:
+        for item in list(self.results_tree.get_children()):
+            detail_url = item
+            if detail_url in links_to_remove:
                 self.results_tree.delete(item)
-                self.link_map.pop(link, None)
+                self.link_map.pop(detail_url, None)
 
     def get_selected_link_2_files(self) -> list[Link_to_file]:
         """
@@ -540,11 +550,8 @@ class DownloaderGUI(tk.Tk):
         # guard access to self.check_vars in case of mismatch between treeview children and check_vars length
         for i, item in enumerate(self.results_tree.get_children()):
             if i < len(self.check_vars) and self.check_vars[i]:
-                try:
-                    link = self.results_tree.item(item)["values"][3]
-                except Exception:
-                    continue
-                selected_links.append(link)
+                # use iid (item) as the real detail_url
+                selected_links.append(item)
 
         result = []
         for link in selected_links:
@@ -650,7 +657,7 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("check", text=_("Select"))
         self.results_tree.heading("Title", text=_("Title"))
         self.results_tree.heading("Size", text=_("Size"))
-        self.results_tree.heading("Link", text=_("Link"))
+        self.results_tree.heading("Source", text=_("Source"))
         self._rebuild_type_menus()
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
 

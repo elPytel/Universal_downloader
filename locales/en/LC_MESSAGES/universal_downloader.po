@@ -51,6 +51,9 @@ msgstr "Size"
 msgid "Link"
 msgstr "Link"
 
+msgid "Source"
+msgstr "Source"
+
 msgid "Toggled select/deselect all."
 msgstr "Toggled select/deselect all."
 
