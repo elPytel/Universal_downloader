@@ -262,8 +262,9 @@ class DownloaderGUI(tk.Tk):
         self.log_text = tk.Text(self.log_frame, height=10, state=tk.DISABLED)
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
-        self.check_vars = []
-
+        # map item iid (detail_url) -> checked(bool). Keeps state independent of row ordering.
+        self.checked_map = {}
+ 
         # Define tags for colored text
         self.log_text.tag_config("info", foreground="blue")
         self.log_text.tag_config("warning", foreground="orange")
@@ -272,20 +273,25 @@ class DownloaderGUI(tk.Tk):
 
     def get_check_symbol(self, checked):
         return "✓" if checked else "✗"
-
+ 
     def toggle_check(self, event):
-        item = self.results_tree.selection()[0]
-        index = int(self.results_tree.item(item, "tags")[0])
-        self.check_vars[index] = not self.check_vars[index]
-        self.results_tree.item(item, values=(self.get_check_symbol(self.check_vars[index]), *self.results_tree.item(item)["values"][1:]))
-
+        sel = self.results_tree.selection()
+        if not sel:
+            return
+        item = sel[0]
+        current = self.checked_map.get(item, False)
+        new = not current
+        self.checked_map[item] = new
+        self.results_tree.item(item, values=(self.get_check_symbol(new), *self.results_tree.item(item)["values"][1:]))
+ 
     def toggle_select_all(self):
-        select_all = not all(self.check_vars)
-        for i in range(len(self.check_vars)):
-            self.check_vars[i] = select_all
-            item = self.results_tree.get_children()[i]
-            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
-    
+        children = list(self.results_tree.get_children())
+        select_all = not all(self.checked_map.get(item, False) for item in children)
+        for item in children:
+            self.checked_map[item] = select_all
+            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]))
+     
+     
     def on_right_click_copy_link(self, event):
         """
         Right-click handler: if clicked cell is in the Source column, copy underlying detail URL to clipboard.
@@ -503,7 +509,7 @@ class DownloaderGUI(tk.Tk):
         And updates the link_map accordingly.
         """
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = [False for _ in link_2_files]
+        self.checked_map.clear()
         self.link_map.clear()
         for i, link_2_file in enumerate(link_2_files):
             source_name = CLASS_NAME_MAP.get(link_2_file.source_class, getattr(link_2_file.source_class, "__name__", "Unknown"))
@@ -511,8 +517,8 @@ class DownloaderGUI(tk.Tk):
             self.results_tree.insert(
                 "", "end", iid=link_2_file.detail_url,
                 values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
-                tags=(str(i),)
             )
+            self.checked_map[link_2_file.detail_url] = False
             self.link_map[link_2_file.detail_url] = link_2_file
 
     def add_unique_to_results(self, link_2_files):
@@ -527,9 +533,8 @@ class DownloaderGUI(tk.Tk):
                 self.results_tree.insert(
                     "", "end", iid=link_2_file.detail_url,
                     values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
-                    tags=(str(len(self.check_vars)),)
                 )
-                self.check_vars.append(False)
+                self.checked_map[link_2_file.detail_url] = False
                 self.link_map[link_2_file.detail_url] = link_2_file
                 existing_links.add(link_2_file.detail_url)
 
@@ -540,19 +545,15 @@ class DownloaderGUI(tk.Tk):
             if detail_url in links_to_remove:
                 self.results_tree.delete(item)
                 self.link_map.pop(detail_url, None)
+                self.checked_map.pop(detail_url, None)
 
     def get_selected_link_2_files(self) -> list[Link_to_file]:
         """
         Returns a list of Link_to_file objects corresponding to currently checked items in the results treeview.
         If a selected link is missing from link_map, creates a safe fallback Link_to_file object.
         """
-        selected_links = []
-        # guard access to self.check_vars in case of mismatch between treeview children and check_vars length
-        for i, item in enumerate(self.results_tree.get_children()):
-            if i < len(self.check_vars) and self.check_vars[i]:
-                # use iid (item) as the real detail_url
-                selected_links.append(item)
-
+        selected_links = [item for item in self.results_tree.get_children() if self.checked_map.get(item, False)]
+ 
         result = []
         for link in selected_links:
             l2f = self.link_map.get(link)
@@ -596,16 +597,18 @@ class DownloaderGUI(tk.Tk):
          - link_map.
         """
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = []
+        self.checked_map.clear()
         self.link_map.clear()
         self.log(_("Cleared all displayed files."), "info")
-
+ 
     def clear_not_selected(self):
-        items_to_keep = [(self.results_tree.item(item)["values"], self.results_tree.item(item)["tags"]) for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        # keep only items that are checked (based on checked_map)
+        items_to_keep = [(self.results_tree.item(item)["values"], item) for item in self.results_tree.get_children() if self.checked_map.get(item, False)]
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = [True for _ in items_to_keep]
-        for values, tags in items_to_keep:
-            self.results_tree.insert("", "end", values=values, tags=tags)
+        self.checked_map.clear()
+        for values, iid in items_to_keep:
+            self.results_tree.insert("", "end", iid=iid, values=values)
+            self.checked_map[iid] = True
         self.log(_("Cleared not selected files."), "info")
 
     def log(self, message, tag="info", end="\n"):
@@ -619,7 +622,8 @@ class DownloaderGUI(tk.Tk):
         if col == "Size":
             items.sort(key=lambda t: size_string_2_bytes(t[0]), reverse=reverse)
         elif col == "check":
-            items.sort(key=lambda t: self.check_vars[int(self.results_tree.item(t[1], "tags")[0])], reverse=reverse)
+            # sort by checked state stored per-iid
+            items.sort(key=lambda t: self.checked_map.get(t[1], False), reverse=reverse)
         else:
             items.sort(reverse=reverse)
         
