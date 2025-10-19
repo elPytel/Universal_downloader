@@ -1,11 +1,24 @@
 # Universal downloader
 
-Slouží pro stahování souborů z webů: 
+Lze použít pro stahování souborů z webů: 
 - [datoid.cz](https://datoid.cz),
-- [sdilej.cz](https://sdilej.cz).
+- [sdilej.cz](https://sdilej.cz),
+- [prehraj.to](https://prehraj.to).
+
+## Právní upozornění
+
+> [!warning]
+Tato aplikace je určena výhradně pro legální a autorizované použití. Není určena k obcházení autorských práv ani k získávání obsahu bez výslovného souhlasu držitelů práv. Uživatelé jsou plně zodpovědní za dodržování platných zákonů a podmínek použití webových stránek, ze kterých stahují obsah. Autor ani přispěvatelé nenesou odpovědnost za jakékoli škody nebo právní následky způsobené neoprávněným použitím této aplikace.
+
+## Legal notice (English)
+
+> [!warning]
+This application is intended for lawful, authorized use only. It is not intended to circumvent copyright or to obtain content without the explicit permission of the rights holders. Users are solely responsible for complying with applicable laws and the terms of service of websites they access. The author and contributors are not liable for any damages or legal consequences resulting from improper use.
 
 ## Obsah
 - [Universal downloader](#universal-downloader)
+  - [Právní upozornění](#právní-upozornění)
+  - [Legal notice (English)](#legal-notice-english)
   - [Obsah](#obsah)
   - [Instalace závislostí](#instalace-závislostí)
     - [Pod Linuxem](#pod-linuxem)
@@ -22,8 +35,9 @@ Slouží pro stahování souborů z webů:
   - [Pokročilé použití](#pokročilé-použití)
   - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
-    - [Závislosti pro vývoj](#závislosti-pro-vývoj)
     - [TODO:](#todo)
+    - [Závislosti pro vývoj](#závislosti-pro-vývoj)
+    - [Struktura projektu](#struktura-projektu)
     - [Jak sestavit exe soubor](#jak-sestavit-exe-soubor)
     - [Testování](#testování)
     - [Dokumentace](#dokumentace)
@@ -160,16 +174,43 @@ python3 main.py --tui
 
 ## Vývoj
 
-### Závislosti pro vývoj
-
-- `msgfmt`
-
 ### TODO:
 
 - Integrace s dalšími weby:
   - [x] datoid.cz,
   - [x] sdilej.cz,
   - [x] prehraj.to
+- [ ] Prohlédávání dalších listů výsledků vyhledávání.
+
+### Závislosti pro vývoj
+
+- `msgfmt`
+
+### Struktura projektu
+```txt
+├───assets
+├───build
+├───dist
+├───docs
+├───download
+├───locales
+│   ├───cs
+│   └───en
+├───src
+│   ├───downloader
+├───tests
+```
+
+Adresáře:
+- `assets/` - ikony a obrázky používané v aplikaci.
+- `build/` - dočasné soubory vytvořené při sestavování aplikace.
+- `dist/` - výsledný `.exe` soubor po sestavení aplikace.
+- `docs/` - vygenerovaná dokumentace projektu.
+- `download/` - výchozí složka pro stahování souborů
+- `locales/` - překladové soubory pro různé jazyky.
+- `src/` - zdrojové kódy aplikace.
+  - `downloader/` - moduly pro stahování z různých webů.
+- `tests/` - testovací skripty pro ověření funkčnosti aplikace.
 
 ### Jak sestavit exe soubor
 Pro sestavení exe souboru použijte:

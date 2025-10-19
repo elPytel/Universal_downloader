@@ -4,9 +4,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import bs4
-from link_to_file import Link_to_file
-from datoid_downloader import *
-from download_page_search import InsufficientTimeoutError
+from src.link_to_file import Link_to_file
+from src.downloader.datoid import *
 
 @pytest.mark.parametrize("page, link_2_file", [
     (
@@ -104,5 +103,3 @@ def test_get_download_link(url, download_link):
 ])
 def test_search(prompt, file_type, url):
     assert Datoid_downloader.generate_search_url(prompt, file_type) == url
-
-

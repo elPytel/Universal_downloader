@@ -1,15 +1,24 @@
 from __future__ import annotations
+import logging
 import bs4
-from download import *
+from src.download import *
 from basic_colors import *
-from download_page_search import *
-from link_to_file import Link_to_file, compare_sizes
+from src.downloader.page_search import *
+from src.link_to_file import Link_to_file, compare_sizes
 
 class Sdilej_downloader(Download_page_search):
     """
     Downloader from: sdilej.cz
     """
     webpage = "https://sdilej.cz"
+
+    logger = logging.getLogger("Sdilej_downloader")
+    if not logger.hasHandlers():
+        handler = logging.FileHandler("sdilej_downloader.log", encoding="utf-8")
+        formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
     
     def __init__(self):
         pass
@@ -18,9 +27,11 @@ class Sdilej_downloader(Download_page_search):
         if prompt is None or prompt.strip() == "":
             raise ValueError("Prompt cannot be empty.")
         url = Sdilej_downloader.generate_search_url(prompt, file_type, search_type)
-        page = download_page(url)
-        return Sdilej_downloader.parse_catalogue(page)
-    
+        Sdilej_downloader.logger.info(f"Searching Sdilej with URL: {url}")
+        response = requests.get(url)
+        Sdilej_downloader.logger.info(f"Response received: {response.status_code}")
+        return Sdilej_downloader.parse_catalogue(response)
+
     @staticmethod
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
         """
@@ -133,7 +144,7 @@ class Sdilej_downloader(Download_page_search):
         """
         Iterates through the search results page and returns information about the files.
 
-        yield: Link_to_file
+        Yields: Link_to_file
         """
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         content = soup.find("div", class_="row post")

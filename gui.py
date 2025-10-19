@@ -10,13 +10,12 @@ import threading
 import subprocess
 import tkinter as tk
 from tkinter import ttk
-from link_to_file import *
-from PIL import ImageTk
-from sdilej_downloader import Sdilej_downloader
-from datoid_downloader import Datoid_downloader
-from prehrajto_downloader import Prehrajto_downloader
+from src.link_to_file import *
+from src.downloader.sdilej import Sdilej_downloader
+from src.downloader.datoid import Datoid_downloader
+from src.downloader.prehrajto import Prehrajto_downloader
 from main import download_folder, JSON_FILE
-from download_page_search import Download_page_search, InsufficientTimeoutError
+from src.downloader.page_search import Download_page_search, InsufficientTimeoutError
 
 CONFIG_FILE = "config.json"
 DEFAULT_LANGUAGE = "en"
@@ -32,6 +31,9 @@ SOURCES = [
     {"name": "Datoid.cz", "class": Datoid_downloader, "timeout": TIME_OUT},
     {"name": "Prehraj.to", "class": Prehrajto_downloader, "timeout": TIME_OUT},
 ]
+
+# map source class -> display name for quick lookup
+CLASS_NAME_MAP = {s["class"]: s["name"] for s in SOURCES}
 
 DOMAIN = 'universal_downloader'
 ICON_FILE = 'icon.png'
@@ -233,15 +235,15 @@ class DownloaderGUI(tk.Tk):
         self.results_frame = ttk.Frame(self)
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-        self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Link"), show="headings")
+        self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Source"), show="headings")
         self.results_tree.heading("check", text=_("Select"), command=lambda: self.sort_treeview("check", False))
         self.results_tree.heading("Title", text=_("Title"), command=lambda: self.sort_treeview("Title", False))
         self.results_tree.heading("Size", text=_("Size"), command=lambda: self.sort_treeview("Size", False))
-        self.results_tree.heading("Link", text=_("Link"))
+        self.results_tree.heading("Source", text=_("Source"))
         self.results_tree.column("check", width=10, anchor="center")
         self.results_tree.column("Title", width=240)
         self.results_tree.column("Size", width=20)
-        self.results_tree.column("Link", width=180)
+        self.results_tree.column("Source", width=140)
 
         # Scrollbar
         scrollbar = ttk.Scrollbar(self.results_frame, orient="vertical", command=self.results_tree.yview)
@@ -250,6 +252,8 @@ class DownloaderGUI(tk.Tk):
 
         self.results_tree.pack(fill=tk.BOTH, expand=True)
         self.results_tree.bind("<Double-1>", self.toggle_check)
+        # Right-click on Link column copies the download URL to clipboard (Windows: Button-3)
+        self.results_tree.bind("<Button-3>", self.on_right_click_copy_link)
 
         # Log frame
         self.log_frame = ttk.Frame(self)
@@ -258,8 +262,9 @@ class DownloaderGUI(tk.Tk):
         self.log_text = tk.Text(self.log_frame, height=10, state=tk.DISABLED)
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
-        self.check_vars = []
-
+        # map item iid (detail_url) -> checked(bool). Keeps state independent of row ordering.
+        self.checked_map = {}
+ 
         # Define tags for colored text
         self.log_text.tag_config("info", foreground="blue")
         self.log_text.tag_config("warning", foreground="orange")
@@ -268,19 +273,47 @@ class DownloaderGUI(tk.Tk):
 
     def get_check_symbol(self, checked):
         return "✓" if checked else "✗"
-
+ 
     def toggle_check(self, event):
-        item = self.results_tree.selection()[0]
-        index = int(self.results_tree.item(item, "tags")[0])
-        self.check_vars[index] = not self.check_vars[index]
-        self.results_tree.item(item, values=(self.get_check_symbol(self.check_vars[index]), *self.results_tree.item(item)["values"][1:]))
-
+        sel = self.results_tree.selection()
+        if not sel:
+            return
+        item = sel[0]
+        current = self.checked_map.get(item, False)
+        new = not current
+        self.checked_map[item] = new
+        self.results_tree.item(item, values=(self.get_check_symbol(new), *self.results_tree.item(item)["values"][1:]))
+ 
     def toggle_select_all(self):
-        select_all = not all(self.check_vars)
-        for i in range(len(self.check_vars)):
-            self.check_vars[i] = select_all
-            item = self.results_tree.get_children()[i]
-            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]), tags=(str(i),))
+        children = list(self.results_tree.get_children())
+        select_all = not all(self.checked_map.get(item, False) for item in children)
+        for item in children:
+            self.checked_map[item] = select_all
+            self.results_tree.item(item, values=(self.get_check_symbol(select_all), *self.results_tree.item(item)["values"][1:]))
+     
+     
+    def on_right_click_copy_link(self, event):
+        """
+        Right-click handler: if clicked cell is in the Source column, copy underlying detail URL to clipboard.
+        """
+        try:
+            region = self.results_tree.identify_region(event.x, event.y)
+            col = self.results_tree.identify_column(event.x)  # e.g. "#4" for 4th column
+            # Source is the 4th column (#4)
+            if region != "cell" or col != "#4":
+                return
+            # identify_row returns the item id (we store detail_url as iid)
+            row = self.results_tree.identify_row(event.y)
+            if not row:
+                return
+            # use iid (row) as the real detail_url
+            link = row
+            # copy to clipboard
+            self.clipboard_clear()
+            self.clipboard_append(link)
+            self.log(_("Link copied to clipboard: {}").format(link), "info")
+        except Exception as e:
+            self.log(_("Failed to copy link: {}").format(e), "error")
 
     def start_search_thread(self):
         """
@@ -343,80 +376,110 @@ class DownloaderGUI(tk.Tk):
             self.searching = False
 
     def start_download_thread(self):
-        threading.Thread(target=self.download_selected).start()
-
-    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        threading.Thread(target=self.download_selected, daemon=True).start()
+    
+    def download_worker(self, q: queue.Queue, timeout: int, success_list: list, success_lock: threading.Lock):
         """
-        Returns a list of Link_to_file objects for the selected items in the results treeview.
-        """
-        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        return [self.link_map[link] for link in selected_links if link in self.link_map]
-
-    def download_selected(self):
-        """
-        Downloads the selected files. With respect to individual source class download methods and timeouts.
-        1. Gets selected ``Link_to_file`` objects.
-        2. For each file:
-              - Checks if the file already exists.
-              - Downloads the file.
-              - Tests the downloaded file.
-              - Logs success or failure.
-        """
-        self.log(_("Download initiated..."), "info")
+        Worker function to download files from the queue.
         
-        link_2_files = self.get_selected_link_2_files()
-        if not link_2_files:
-            self.log(_("No files selected for download."), "warning")
-            return
-        
-        self.log(_("Number of files to download: {}").format(len(link_2_files)), "info")
-            
-        # Stahování
-        successfull_files = []
-        while len(link_2_files) > 0:
-            link_2_file = link_2_files.pop(0)
+        Args:
+            q (queue.Queue): Queue containing Link_to_file objects to download.
+            timeout (int): Timeout between downloads.
+            success_list (list): Shared list to store successfully downloaded files.
+            success_lock (threading.Lock): Lock to synchronize access to success_list.
+        """
+        while not q.empty():
+            link_2_file = q.get()
+
             # test if file exists
-            if os.path.exists(f"{download_folder}/{link_2_file.title}"):
+            target_path = f"{download_folder}/{link_2_file.title}"
+            if os.path.exists(target_path):
                 self.log(_("File {} already exists.").format(link_2_file.title), "warning")
-                successfull_files.append(link_2_file)
+                with success_lock:
+                    success_list.append(link_2_file)
                 continue
-            
+
             self.log(_("Downloading file: {} of size {}...").format(link_2_file.title, link_2_file.size), "info")
 
-            link_2_file.download(download_folder)
-
-            # test downloaded file
-            file_size = None
             try:
-                file_size = os.path.getsize(f"{download_folder}/{link_2_file.title}")
+                link_2_file.download(download_folder)
+
+                file_size = os.path.getsize(target_path)
                 if link_2_file.source_class.test_downloaded_file(link_2_file, download_folder):
-                    successfull_files.append(link_2_file)
+                    with success_lock:
+                        success_list.append(link_2_file)
                     self.log(_("File {} of size {} was downloaded.").format(link_2_file.title, size_int_2_string(file_size)), "success")
                     self.remove_from_results([link_2_file])
             except ValueError as e:
-                # Wrong file size
                 self.log(_("Error: {}").format(e), "error")
                 self.log(_("File {} was not downloaded correctly.").format(link_2_file.title), "error")
-                self.log(_("File size: {} expected: {}").format(file_size, link_2_file.size), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
             except InsufficientTimeoutError as e:
-                # Timeout error
                 self.log(_("Error: {}").format(e), "error")
                 self.log(_("File {} was not downloaded at all.").format(link_2_file.title), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
                 if self.add_files_with_failed_timeout_var.get():
-                    link_2_files.append(link_2_file)
+                    q.put(link_2_file)
                     self.log(_("File {} was added back to the list.").format(link_2_file.title), "info")
             except Exception as e:
-                # Other error
                 self.log(_("Error: {}").format(e), "error")
-                os.remove(f"{download_folder}/{link_2_file.title}")
-                self.log(_("File {} was removed.").format(link_2_file.title), "info")
-                
-            time.sleep(TIME_OUT)
-        
+                if os.path.exists(target_path):
+                    os.remove(target_path)
+                    self.log(_("File {} was removed.").format(link_2_file.title), "info")
+            
+            if not q.empty():
+                self.log(_("Waiting for {} seconds...").format(timeout), "info")
+                time.sleep(timeout)
+
+    def download_selected(self):
+        """
+        Downloads all selected `Link_to_file` objects using worker threads.
+
+        1. loads selected `Link_to_file` objects,
+        2. groups them by `source_class`,
+        3. starts a worker thread for each group to download files with appropriate timeout,
+        4. waits for all threads to complete,
+        5. removes successfully downloaded files from the results and JSON file if configured.
+
+        """
+        self.log(_("Download initiated..."), "info")
+
+        selected = self.get_selected_link_2_files()
+        if not selected:
+            self.log(_("No files selected for download."), "warning")
+            return
+
+        self.log(_("Number of files to download: {}").format(len(selected)), "info")
+
+        # Seskupit podle source_class
+        groups: dict = {}
+        for l in selected:
+            groups.setdefault(l.source_class, []).append(l)
+
+        threads = []
+        successfull_files: list = []
+        success_lock = threading.Lock()
+
+        for source_class, items in groups.items():
+            q = queue.Queue()
+            for it in items:
+                q.put(it)
+
+            # najít timeout pro daný zdroj
+            timeout = next((s["timeout"] for s in SOURCES if s["class"] == source_class), TIME_OUT)
+
+            t = threading.Thread(target=self.download_worker, args=(q, timeout, successfull_files, success_lock), daemon=True)
+            t.start()
+            threads.append(t)
+
+        # počkat na dokončení všech worker vláken
+        for t in threads:
+            t.join()
+
         self.log(_("Downloaded files: {}").format(len(successfull_files)), "success")
 
         if self.remove_successful_var.get():
@@ -428,13 +491,17 @@ class DownloaderGUI(tk.Tk):
         Yields Link_to_file objects from the results treeview.
         """
         for item in self.results_tree.get_children():
-            check, title, size, link = self.results_tree.item(item)["values"]
-            l2f = self.link_map.get(link)
+            # item is iid == detail_url
+            detail_url = item
+            l2f = self.link_map.get(detail_url)
             if l2f is not None:
                 yield l2f
             else:
+                vals = self.results_tree.item(item)["values"]
+                title = vals[1] if len(vals) > 1 else detail_url
+                size = vals[2] if len(vals) > 2 else "unknown"
                 self.log(_("Warning: Link not found in map, creating new Link_to_file object."), "warning")
-                yield Link_to_file(title, link, size, Download_page_search) # Fallback, should not happen
+                yield Link_to_file(title, detail_url, size, Download_page_search) # Fallback
 
     def replace_results(self, link_2_files):
         """
@@ -442,14 +509,16 @@ class DownloaderGUI(tk.Tk):
         And updates the link_map accordingly.
         """
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = [False for _ in link_2_files]
+        self.checked_map.clear()
         self.link_map.clear()
         for i, link_2_file in enumerate(link_2_files):
+            source_name = CLASS_NAME_MAP.get(link_2_file.source_class, getattr(link_2_file.source_class, "__name__", "Unknown"))
+            # store detail_url as iid so we can later retrieve the real link even if we display Source
             self.results_tree.insert(
-                "", "end",
-                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
-                tags=(str(i),)
+                "", "end", iid=link_2_file.detail_url,
+                values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
             )
+            self.checked_map[link_2_file.detail_url] = False
             self.link_map[link_2_file.detail_url] = link_2_file
 
     def add_unique_to_results(self, link_2_files):
@@ -460,22 +529,47 @@ class DownloaderGUI(tk.Tk):
         existing_links = set(self.link_map.keys())
         for link_2_file in link_2_files:
             if link_2_file.detail_url not in existing_links:
+                source_name = CLASS_NAME_MAP.get(link_2_file.source_class, getattr(link_2_file.source_class, "__name__", "Unknown"))
                 self.results_tree.insert(
-                    "", "end",
-                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, link_2_file.detail_url),
-                    tags=(str(len(self.check_vars)),)
+                    "", "end", iid=link_2_file.detail_url,
+                    values=(self.get_check_symbol(False), link_2_file.title, link_2_file.size, source_name),
                 )
-                self.check_vars.append(False)
+                self.checked_map[link_2_file.detail_url] = False
                 self.link_map[link_2_file.detail_url] = link_2_file
                 existing_links.add(link_2_file.detail_url)
 
     def remove_from_results(self, link_2_files):
         links_to_remove = {l.detail_url for l in link_2_files}
-        for item in self.results_tree.get_children():
-            _, title, size, link = self.results_tree.item(item)["values"]
-            if link in links_to_remove:
+        for item in list(self.results_tree.get_children()):
+            detail_url = item
+            if detail_url in links_to_remove:
                 self.results_tree.delete(item)
-                self.link_map.pop(link, None)
+                self.link_map.pop(detail_url, None)
+                self.checked_map.pop(detail_url, None)
+
+    def get_selected_link_2_files(self) -> list[Link_to_file]:
+        """
+        Returns a list of Link_to_file objects corresponding to currently checked items in the results treeview.
+        If a selected link is missing from link_map, creates a safe fallback Link_to_file object.
+        """
+        selected_links = [item for item in self.results_tree.get_children() if self.checked_map.get(item, False)]
+ 
+        result = []
+        for link in selected_links:
+            l2f = self.link_map.get(link)
+            if l2f is None:
+                # Fallback: create a minimal Link_to_file object if map is missing entry
+                # Use link as title and unknown size; Download_page_search as a neutral source_class
+                self.log(_("Warning: Selected link {} not found in map, creating fallback object.").format(link), "warning")
+                try:
+                    fallback = Link_to_file(link, link, "unknown", Download_page_search)
+                    result.append(fallback)
+                except Exception:
+                    # If construction fails, skip the entry
+                    self.log(_("Failed to create fallback for {}").format(link), "error")
+            else:
+                result.append(l2f)
+        return result
 
     def save_selected(self):
         """
@@ -485,8 +579,7 @@ class DownloaderGUI(tk.Tk):
         """
         self.log(_("Saving selected items..."), "info")
 
-        selected_links = [self.results_tree.item(item)["values"][3] for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
-        link_2_files = [self.link_map[link] for link in selected_links if link in self.link_map]
+        link_2_files = self.get_selected_link_2_files()
         save_links_to_file(link_2_files, JSON_FILE)
 
         self.log(_("Saved items: {}").format(len(link_2_files)), "success")
@@ -504,16 +597,18 @@ class DownloaderGUI(tk.Tk):
          - link_map.
         """
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = []
+        self.checked_map.clear()
         self.link_map.clear()
         self.log(_("Cleared all displayed files."), "info")
-
+ 
     def clear_not_selected(self):
-        items_to_keep = [(self.results_tree.item(item)["values"], self.results_tree.item(item)["tags"]) for i, item in enumerate(self.results_tree.get_children()) if self.check_vars[i]]
+        # keep only items that are checked (based on checked_map)
+        items_to_keep = [(self.results_tree.item(item)["values"], item) for item in self.results_tree.get_children() if self.checked_map.get(item, False)]
         self.results_tree.delete(*self.results_tree.get_children())
-        self.check_vars = [True for _ in items_to_keep]
-        for values, tags in items_to_keep:
-            self.results_tree.insert("", "end", values=values, tags=tags)
+        self.checked_map.clear()
+        for values, iid in items_to_keep:
+            self.results_tree.insert("", "end", iid=iid, values=values)
+            self.checked_map[iid] = True
         self.log(_("Cleared not selected files."), "info")
 
     def log(self, message, tag="info", end="\n"):
@@ -527,7 +622,8 @@ class DownloaderGUI(tk.Tk):
         if col == "Size":
             items.sort(key=lambda t: size_string_2_bytes(t[0]), reverse=reverse)
         elif col == "check":
-            items.sort(key=lambda t: self.check_vars[int(self.results_tree.item(t[1], "tags")[0])], reverse=reverse)
+            # sort by checked state stored per-iid
+            items.sort(key=lambda t: self.checked_map.get(t[1], False), reverse=reverse)
         else:
             items.sort(reverse=reverse)
         
@@ -565,7 +661,7 @@ class DownloaderGUI(tk.Tk):
         self.results_tree.heading("check", text=_("Select"))
         self.results_tree.heading("Title", text=_("Title"))
         self.results_tree.heading("Size", text=_("Size"))
-        self.results_tree.heading("Link", text=_("Link"))
+        self.results_tree.heading("Source", text=_("Source"))
         self._rebuild_type_menus()
         self.log(_("Language changed to {}.").format(self.current_language.get()), "info")
 

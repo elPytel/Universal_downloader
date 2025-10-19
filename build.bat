@@ -19,7 +19,7 @@ pip install -r requirements.txt
 :: Compile .po -> .mo if msgfmt is available
 where msgfmt >nul 2>&1
 if %ERRORLEVEL%==0 (
-    echo msgfmt found, compiling .po -> .mo...
+    echo msgfmt found, compiling .po to .mo...
     for /d %%D in (locales\*) do (
         if exist "%%D\LC_MESSAGES\universal_downloader.po" (
             echo Compiling "%%D\LC_MESSAGES\universal_downloader.po"
@@ -28,7 +28,7 @@ if %ERRORLEVEL%==0 (
         )
     )
 ) else (
-    echo msgfmt not found in PATH — skipping .po -> .mo compilation. Make sure .mo files are included in the build.
+    echo msgfmt not found in PATH — skipping .po to .mo compilation. Make sure .mo files are included in the build.
 )
 
 :: Build the application using pyinstaller
