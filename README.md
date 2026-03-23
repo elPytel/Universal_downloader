@@ -22,6 +22,7 @@ This application is intended for lawful, authorized use only. It is not intended
   - [Obsah](#obsah)
   - [Instalace závislostí](#instalace-závislostí)
     - [Pod Linuxem](#pod-linuxem)
+  - [Makefile](#makefile)
   - [Použití v příkazové řádce](#použití-v-příkazové-řádce)
     - [Help](#help)
     - [Vyhledání souborů](#vyhledání-souborů)
@@ -54,6 +55,15 @@ Pro instalaci stačí spustit skript `install.sh`.
 ```bash
 ./install.sh
 ```
+
+## Makefile
+Pro zjednodušení některých úkonů je k dispozici `Makefile`. 
+
+- `install-dependencies` - nainstaluje závislosti z `pip-requirements.txt` a `apt-dependencies.txt`.
+- `test` - spustí testy.
+- `generate-docs` - vygeneruje dokumentaci.
+- `build` - sestaví exe soubor.
+- `run` - spustí aplikaci v GUI režimu.
 
 ## Použití v příkazové řádce
 
