@@ -3,6 +3,7 @@
 
 ### User edited ###
 download/*
+logs/*
 *.log
 *.json
 *.html

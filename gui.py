@@ -27,7 +27,7 @@ LANGUAGES = {
 }
 
 SOURCES = [
-    {"name": "Sdilej.cz", "class": Sdilej_downloader, "timeout": TIME_OUT},
+    # {"name": "Sdilej.cz", "class": Sdilej_downloader, "timeout": TIME_OUT},
     {"name": "Datoid.cz", "class": Datoid_downloader, "timeout": TIME_OUT},
     {"name": "Prehraj.to", "class": Prehrajto_downloader, "timeout": TIME_OUT},
 ]

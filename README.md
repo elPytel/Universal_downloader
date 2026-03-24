@@ -34,7 +34,6 @@ This application is intended for lawful, authorized use only. It is not intended
     - [Stažení souborů](#stažení-souborů-1)
     - [Výběr zdrojů pro stahování](#výběr-zdrojů-pro-stahování)
   - [Pokročilé použití](#pokročilé-použití)
-  - [Použití v TUI](#použití-v-tui)
   - [Vývoj](#vývoj)
     - [TODO:](#todo)
     - [Závislosti pro vývoj](#závislosti-pro-vývoj)
@@ -171,17 +170,6 @@ python3 main.py --download --remove
 > Aplikace tak může běžet na serveru, kde nemáte grafické rozhraní.
 > Stačí jen přesunout soubor `files.json` na server a spustit výše uvedený příkaz.
 
-## Použití v TUI
-
-```bash
-python3 main.py --tui
-```
-
-> [!warning]
-> PTG nefunguje pod OS Windows.
-
-[TUI](TUI.md)
-
 ## Vývoj
 
 ### TODO:
@@ -191,6 +179,7 @@ python3 main.py --tui
   - [x] sdilej.cz,
   - [x] prehraj.to
 - [x] Prohlédávání dalších listů výsledků vyhledávání.
+- [ ] Opravení stahování ze stránek co potřebují `js` pomocí playwright.
 
 ### Závislosti pro vývoj
 

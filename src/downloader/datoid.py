@@ -6,6 +6,8 @@ from src.link_to_file import Link_to_file
 from basic_colors import *
 from src.downloader.page_search import *
 
+DEBUG = True
+
 class Datoid_downloader(Download_page_search):
     """
     Downloader from: datoid.cz
@@ -14,7 +16,8 @@ class Datoid_downloader(Download_page_search):
 
     logger = logging.getLogger("Datoid_downloader")
     if not logger.hasHandlers():
-        handler = logging.FileHandler("datoid_downloader.log", encoding="utf-8")
+        os.makedirs("logs", exist_ok=True)
+        handler = logging.FileHandler("logs/datoid_downloader.log", encoding="utf-8")
         formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -47,6 +50,8 @@ class Datoid_downloader(Download_page_search):
     
     @staticmethod
     def get_atributes_from_catalogue(soup) -> "Link_to_file":
+        if soup is None:
+            raise ValueError("Soup object cannot be None. Catalogue parsing failed.")
         try:
             a_tag = soup.find("a")
             link = Datoid_downloader.webpage + a_tag.get("href")
@@ -55,11 +60,14 @@ class Datoid_downloader(Download_page_search):
             size = size_span.text.strip()
             link_2_file = Link_to_file(title, link, size, Datoid_downloader)
         except Exception as e:
+            Datoid_downloader.logger.error(f"Error parsing catalogue attributes: {e} \n Soup content: {soup}")
             raise ValueError("unable to parse atributes." + str(e))
         return link_2_file
     
     @staticmethod
     def get_atributes_from_file_page(soup) -> "Link_to_file":
+        if soup is None:
+            raise ValueError("Soup object cannot be None. File page parsing failed.")
         try:
             # Název souboru z <h1>
             title = soup.find("h1").text.strip()
@@ -87,6 +95,7 @@ class Datoid_downloader(Download_page_search):
             link = Datoid_downloader.webpage + a_tag.get("href")
             link_2_file = Link_to_file(title, link, size, Datoid_downloader)
         except Exception as e:
+            Datoid_downloader.logger.error(f"Error parsing file page attributes: {e}\n Soup content: {soup}\n")
             raise ValueError("unable to parse atributes." + str(e))
         return link_2_file
 
@@ -104,6 +113,9 @@ class Datoid_downloader(Download_page_search):
         """
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         content = soup.find("div", id="main")
+        if DEBUG:
+            print("Parsed file page content:")
+            print(content.prettify() if content else "No content found.")
         return content
     
     @staticmethod
@@ -153,6 +165,8 @@ class Datoid_downloader(Download_page_search):
                     link_2_file = Datoid_downloader.get_atributes_from_file_page(download_page_content)
                     yield link_2_file
                 except ValueError as e:
+                    Datoid_downloader.logger.error(f"Error: {e}\nSoup content: {download_page_content}\nCatalogue file: {catalogue_file if catalogue_file else 'Unknown'}")
+                    
                     print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)
         
         def find_next_url(soup_obj):

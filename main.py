@@ -24,9 +24,12 @@ DEBUG = False
 VERBOSE = True
 
 download_folder = "download"
+log_folder = "logs"
 
 prompt = "karel capek"
 file_type = "audio"
+
+os.makedirs(log_folder, exist_ok=True)
 
 def read_input(input_queue):
     while True:

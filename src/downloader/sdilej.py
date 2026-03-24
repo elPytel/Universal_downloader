@@ -14,7 +14,8 @@ class Sdilej_downloader(Download_page_search):
 
     logger = logging.getLogger("Sdilej_downloader")
     if not logger.hasHandlers():
-        handler = logging.FileHandler("sdilej_downloader.log", encoding="utf-8")
+        os.makedirs("logs", exist_ok=True)
+        handler = logging.FileHandler("logs/sdilej_downloader.log", encoding="utf-8")
         formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)

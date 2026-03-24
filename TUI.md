@@ -1,5 +1,12 @@
 # TUI
 
+```bash
+python3 main.py --tui
+```
+
+> [!warning]
+> PTG nefunguje pod OS Windows.
+
 ## TODO:
 - https://realpython.com/python-download-file-from-url/
 - https://github.com/bczsalba/pytermgui/tree/master/examples
