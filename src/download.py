@@ -39,8 +39,8 @@ def download_page(url):
     a JavaScript-required notice (e.g. Datoid "Zapněte si prosím Javascript"),
     falls back to Playwright to render the page and returns the rendered HTML.
     """
-    """
     response = requests.get(url)
+    """
     text = response.text if response is not None else ""
 
     js_signals = (
@@ -56,7 +56,7 @@ def download_page(url):
             # return original response but caller can detect JS requirement via text
             return response
     """
-    return download_page_js(url)
+    return response
 
 def save_binary_file(response, file_path):
     """

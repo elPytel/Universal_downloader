@@ -3,7 +3,6 @@ pytest
 pytest-cov
 argparse
 requests
-playwright
 pytermgui
 PyYAML
 Pillow

@@ -14,7 +14,6 @@ fi
 if [ -f $python_dependencies ]; then 
     pip install -r $python_dependencies
 fi
-playwright install
 
 # Compile language files
 localisation="universal_downloader"
