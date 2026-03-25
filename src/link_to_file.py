@@ -98,12 +98,13 @@ class Link_to_file:
 
         download_link = self.get_download_link()
         response = requests.get(download_link, stream=True)
-        ext = get_response_extension(response)
-        self.save_file_with_extension(response, download_folder, ext)
+        self.save_file_with_extension(response, download_folder)
 
     def save_file_with_extension(self, response, download_folder=".", ext=None):
         if not ext:
             ext = get_extension_from_title(self.title)
+        if not ext:
+            ext = get_response_extension(response)
         if not ext:
             ext = get_extension_from_url(self.detail_url)
         if not ext:
