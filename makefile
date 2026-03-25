@@ -37,6 +37,6 @@ clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(RESET)"
 	rm -rf dist 
 	rm -rf build *.egg-info
-	rm *.log 2>/dev/null || true
+	rm -rf logs
 	rm ${DOCS_DIR}/* 2>/dev/null || true
 	@echo "$(GREEN)Cleaned!$(RESET)"
