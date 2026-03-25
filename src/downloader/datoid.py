@@ -2,11 +2,12 @@ import bs4
 import urllib.parse
 import logging
 import requests
+from src.decript import datoid_decrypt
 from src.link_to_file import Link_to_file
 from basic_colors import *
 from src.downloader.page_search import *
 
-DEBUG = True
+DEBUG = False
 
 class Datoid_downloader(Download_page_search):
     """
@@ -36,6 +37,10 @@ class Datoid_downloader(Download_page_search):
         url = Datoid_downloader.generate_search_url(prompt, file_type, search_type)
         Datoid_downloader.logger.info(f"Searching Datoid with URL: {url}")
         response = download_page(url)
+        if DEBUG:
+            # store page text for debugging
+            with open("debug_datoid_search_page.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
         Datoid_downloader.logger.info(f"Response received: {response.status_code}")
         return Datoid_downloader.parse_catalogue(response)
     
@@ -47,17 +52,42 @@ class Datoid_downloader(Download_page_search):
         TODO: -{Datoid_downloader.search_types[search_type]}
         """
         return f"{Datoid_downloader.webpage}/s/{prompt.replace(' ', '-')}?key=categories&value={Datoid_downloader.file_types[file_type]}"
-    
+
     @staticmethod
     def get_atributes_from_catalogue(soup) -> "Link_to_file":
         if soup is None:
             raise ValueError("Soup object cannot be None. Catalogue parsing failed.")
         try:
             a_tag = soup.find("a")
-            link = Datoid_downloader.webpage + a_tag.get("href")
-            title = a_tag.find("span", class_="filename").text.strip()
-            size_span = a_tag.find("i", class_="icon-size-white").parent
-            size = size_span.text.strip()
+            if not a_tag:
+                raise ValueError("No anchor tag found in catalogue item.")
+
+            # Prefer data attributes used by Datoid's JS obfuscation
+            data_href = a_tag.get("data-href")
+            data_title = a_tag.get("data-title") or (a_tag.find("span", class_="filename").text.strip() if a_tag.find("span", class_="filename") else None)
+            data_url = a_tag.get("data-url")
+
+            # Compute link: JS does link = data_url.replace("%s", d(data-href, data-title+salt)); link = link.replace("%s", data-title)
+            if data_href and data_title and data_url:
+                decrypted = datoid_decrypt(data_href, data_title)
+                # replace first %s with decrypted token, second with title
+                try:
+                    formatted = data_url.replace("%s", decrypted, 1).replace("%s", data_title, 1)
+                except Exception:
+                    formatted = f"/{decrypted}/{data_title}"
+                link = urllib.parse.urljoin(Datoid_downloader.webpage, formatted)
+            else:
+                # Fallback to href attribute
+                href = a_tag.get("href")
+                if not href:
+                    raise ValueError("No usable URL found in anchor tag.")
+                link = urllib.parse.urljoin(Datoid_downloader.webpage, href)
+
+            title = data_title or (a_tag.find("span", class_="filename").text.strip() if a_tag.find("span", class_="filename") else "")
+            size_span = a_tag.find("i", class_="icon-size-white")
+            size = None
+            if size_span and size_span.parent:
+                size = size_span.parent.text.strip()
             link_2_file = Link_to_file(title, link, size, Datoid_downloader)
         except Exception as e:
             Datoid_downloader.logger.error(f"Error parsing catalogue attributes: {e} \n Soup content: {soup}")

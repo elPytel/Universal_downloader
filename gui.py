@@ -32,6 +32,10 @@ SOURCES = [
     {"name": "Prehraj.to", "class": Prehrajto_downloader, "timeout": TIME_OUT},
 ]
 
+GEOMETRY = (800, 600)
+GEOMETRY = (1300, 800)
+APP_NAME = "Universal Downloader"
+
 # map source class -> display name for quick lookup
 CLASS_NAME_MAP = {s["class"]: s["name"] for s in SOURCES}
 
@@ -75,6 +79,20 @@ class DownloaderGUI(tk.Tk):
 
     def __init__(self):
         super().__init__()
+
+        dpi = self.winfo_fpixels('1i')
+        self.scaling_factor = dpi / 96.0
+        
+        # Nastavení škálování pro Tkinter engine
+        self.tk.call('tk', 'scaling', self.scaling_factor)
+        # ---------------------------
+
+        # Dynamický výpočet geometrie místo hardcodovaného "1300x800"
+        width = int(GEOMETRY[0] * self.scaling_factor)
+        height = int(GEOMETRY[1] * self.scaling_factor)
+
+        self.geometry(f"{width}x{height}")
+
         icon_path = get_resource_path(os.path.join(ASSETS_DIR, "icon.png"))
         if os.path.isfile(icon_path):
             icon = tk.PhotoImage(file=icon_path)
@@ -99,8 +117,7 @@ class DownloaderGUI(tk.Tk):
         self.link_map = {} # detail_url -> Link_to_file (mapping with result treeview)
 
         self.setup_translation()
-        self.title(_("Universal Downloader"))
-        self.geometry("800x600")
+        self.title(_(APP_NAME))
         self.create_widgets()
 
     def load_config(self, config_file=CONFIG_FILE) -> dict:
@@ -234,6 +251,13 @@ class DownloaderGUI(tk.Tk):
         # Results frame
         self.results_frame = ttk.Frame(self)
         self.results_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+        style = ttk.Style()
+        row_h = int(32 * self.scaling_factor)
+        style.configure("Treeview", rowheight=row_h)
+        default_size = int(10 * self.scaling_factor)
+        style.configure("Treeview", font=('TkDefaultFont', default_size))
+        style.configure("Treeview.Heading", font=('TkDefaultFont', default_size, 'bold'))
 
         self.results_tree = ttk.Treeview(self.results_frame, columns=("check", "Title", "Size", "Source"), show="headings")
         self.results_tree.heading("check", text=_("Select"), command=lambda: self.sort_treeview("check", False))
