@@ -5,6 +5,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import bs4
+from types import SimpleNamespace
 from src.link_to_file import Link_to_file
 from src.downloader.prehrajto import *
 
@@ -93,6 +94,50 @@ from src.downloader.prehrajto import *
 def test_get_atributes_from_catalogue(page, link_2_file):
     soup = bs4.BeautifulSoup(page, "html.parser")
     assert str(Prehrajto_downloader.get_atributes_from_catalogue(soup)) == str(link_2_file)
+
+
+def test_parse_catalogue_current_video_listing(monkeypatch):
+    page = """
+    <div id="snippet-videoListing-videoListingWrapper" class="video-listing">
+        <div class="video-wrapper">
+            <a class="video video--small video--link"
+               href="/kosmo-s01e02-cz-serial-720p/6437cccb78651"
+               title="Kosmo S01E02 CZ serial 720p">
+                <div class="video__tag video__tag--size">975.49 MB</div>
+                <h3 class="video__title">Kosmo S01E02 CZ serial 720p</h3>
+            </a>
+        </div>
+        <div class="video-wrapper">
+            <a class="video video--small video--link"
+               href="/kosmo-s01e03-cz-serial-720p/6437cccb78652"
+               title="Kosmo S01E03 CZ serial 720p">
+                <div class="video__tag video__tag--size">900 MB</div>
+            </a>
+        </div>
+    </div>
+    """
+    detail = Link_to_file(
+        "Kosmo S01E02 CZ serial 720p.mp4",
+        "https://prehraj.to/kosmo-s01e02-cz-serial-720p/6437cccb78651",
+        "975.49 MB",
+        Prehrajto_downloader,
+    )
+    monkeypatch.setattr(
+        "src.downloader.prehrajto.download_page",
+        lambda url: SimpleNamespace(text="detail", status_code=200),
+    )
+    monkeypatch.setattr(
+        Prehrajto_downloader,
+        "is_valid_download_page",
+        staticmethod(lambda page: True),
+    )
+    monkeypatch.setattr(
+        Prehrajto_downloader,
+        "get_atributes_from_file_page",
+        staticmethod(lambda page: detail),
+    )
+
+    assert list(Prehrajto_downloader.parse_catalogue(page, limit=1)) == [detail]
 
 @pytest.mark.parametrize("page, link_2_file", [
     (

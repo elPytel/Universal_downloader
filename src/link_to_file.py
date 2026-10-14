@@ -2,7 +2,9 @@ from __future__ import annotations
 import os
 import json
 import requests
+from time import sleep
 import mimetypes
+import logging
 from urllib.parse import urlparse
 from typing import List
 from src.download import *
@@ -86,7 +88,7 @@ class Link_to_file:
         """
         return self.source_class.get_download_link_from_detail(self.detail_url)
 
-    def download(self, download_folder="."):
+    def download(self, download_folder=".", timeout=120):
         """
         Downloads a file from the internet and saves it to the specified folder.
         """
@@ -96,9 +98,55 @@ class Link_to_file:
         if os.path.exists(file_path):
             raise ValueError(f"File {self.title} already exists.")
 
-        download_link = self.get_download_link()
-        response = requests.get(download_link, stream=True)
-        self.save_file_with_extension(response, download_folder)
+        logger = logging.getLogger("universal_downloader")
+        logger.info("Starting download: title=%s detail_url=%s expected_size=%s", self.title, self.detail_url, self.size)
+        try:
+            get_links = getattr(self.source_class, "get_download_links_from_detail", None)
+            link_info = (
+                get_links(self.detail_url, timeout=timeout)
+                if get_links
+                else self.source_class.get_download_link_from_detail(self.detail_url, timeout=timeout)
+            )
+            if isinstance(link_info, str):
+                download_links = [link_info]
+                wait = 0
+                session = requests
+            else:
+                download_links = link_info.links
+                wait = link_info.wait
+                session = link_info.session or requests
+            if wait:
+                logger.info("Waiting before download: title=%s seconds=%s", self.title, wait)
+                sleep(wait)
+            logger.info("Received direct download URL for title=%s", self.title)
+            response = None
+            last_error = None
+            for download_link in download_links:
+                try:
+                    logger.info("Trying direct download URL: title=%s url=%s", self.title, download_link)
+                    response = session.get(download_link, stream=True, timeout=timeout)
+                    response.raise_for_status()
+                    break
+                except requests.RequestException as error:
+                    last_error = error
+                    if response is not None:
+                        response.close()
+                    logger.warning("Direct download URL failed: title=%s url=%s error=%s", self.title, download_link, error)
+                    response = None
+            if response is None:
+                raise last_error or requests.RequestException("No download URL succeeded.")
+            logger.info(
+                "Download response: title=%s status=%s content_type=%s content_length=%s",
+                self.title,
+                response.status_code,
+                response.headers.get("Content-Type"),
+                response.headers.get("Content-Length"),
+            )
+            self.save_file_with_extension(response, download_folder)
+            logger.info("Download completed: title=%s", self.title)
+        except (requests.RequestException, ValueError, OSError):
+            logger.exception("Download failed: title=%s detail_url=%s", self.title, self.detail_url)
+            raise
 
     def save_file_with_extension(self, response, download_folder=".", ext=None):
         if not ext:

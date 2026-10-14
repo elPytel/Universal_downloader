@@ -2,12 +2,20 @@ import bs4
 import urllib.parse
 import logging
 import requests
+from dataclasses import dataclass
 from src.decript import datoid_decrypt
 from src.link_to_file import Link_to_file
 from basic_colors import *
 from src.downloader.page_search import *
 
 DEBUG = False
+
+
+@dataclass
+class DatoidDownloadLinks:
+    links: list[str]
+    wait: float = 0
+    session: requests.Session | None = None
 
 class Datoid_downloader(Download_page_search):
     """
@@ -27,7 +35,7 @@ class Datoid_downloader(Download_page_search):
     def __init__(self):
         pass
 
-    def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
+    def search(self, prompt, file_type="all", search_type="relevance", limit=None) -> 'Generator[Link_to_file, None, None]':
         """
         Search for files on Datoid.cz.
         Returns a generator of Link_to_file objects.
@@ -42,7 +50,7 @@ class Datoid_downloader(Download_page_search):
             with open("debug_datoid_search_page.html", "w", encoding="utf-8") as f:
                 f.write(response.text)
         Datoid_downloader.logger.info(f"Response received: {response.status_code}")
-        return Datoid_downloader.parse_catalogue(response)
+        return Datoid_downloader.parse_catalogue(response, limit=limit)
     
     @staticmethod
     def generate_search_url(prompt, file_type="all", search_type="relevance"):
@@ -149,12 +157,13 @@ class Datoid_downloader(Download_page_search):
         return content
     
     @staticmethod
-    def get_download_link_from_detail(detail_url: str) -> str:
+    def get_download_links_from_detail(detail_url: str, timeout: float = 120) -> DatoidDownloadLinks:
         """
-        Získá přímý odkaz ke stažení ze stránky s detailem souboru na datoid.cz.
+        Získá přímé odkazy ke stažení a serverem požadovanou prodlevu.
         """
         request = "?request=1"
-        response = requests.get(detail_url + request)
+        session = requests.Session()
+        response = session.get(detail_url + request, timeout=timeout)
         if response.status_code != 200:
             Datoid_downloader.logger.error(f"Request failed with status code {response.status_code} for detail URL: {detail_url}")
             raise ValueError(f"Request failed with status code {response.status_code}")
@@ -169,33 +178,62 @@ class Datoid_downloader(Download_page_search):
             Datoid_downloader.logger.error(f"JSON response: {json_response['error']} for detail URL: {detail_url}")
             raise ValueError("No free slots available.")
 
-        if "download_link" in json_response and json_response["download_link"]:
-            return json_response["download_link"]
-        else:
+        links = [
+            json_response.get("download_link"),
+            json_response.get("download_link_cdn"),
+        ]
+        links = list(dict.fromkeys(link for link in links if link))
+        if not links:
             Datoid_downloader.logger.error(f"JSON response: {json_response} for detail URL: {detail_url}")
             raise ValueError("No download link found in json_response.")
+        wait = json_response.get("wait", 0)
+        try:
+            wait = max(0, float(wait))
+        except (TypeError, ValueError):
+            wait = 0
+        Datoid_downloader.logger.info(
+            "Received %s Datoid download link(s), wait=%s, detail_url=%s",
+            len(links),
+            wait,
+            detail_url,
+        )
+        return DatoidDownloadLinks(links, wait, session)
 
     @staticmethod
-    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
+    def get_download_link_from_detail(detail_url: str, timeout: float = 120) -> str:
+        return Datoid_downloader.get_download_links_from_detail(detail_url, timeout).links[0]
+
+    @staticmethod
+    def parse_catalogue(page, limit=None) -> 'Generator[Link_to_file, None, None]':
         """
         Iterates through the search results page and returns information about files.
 
         Yields: Link_to_file
         """
+        processed = 0
+
         def process_soup_and_yield(soup_obj):
+            nonlocal processed
             content = soup_obj.find("ul", class_="list", id="snippet--search_files")
             if content is None:
                 return None
             content = remove_style(content)
             for videobox in content.find_all("li"):
+                if limit is not None and processed >= limit:
+                    return
+                if videobox.find("a", href=True) is None:
+                    continue
+                processed += 1
+
                 catalogue_file = None
+                download_page_content = None
                 try:
                     catalogue_file = Datoid_downloader.get_atributes_from_catalogue(videobox)
                     download_page_content = Datoid_downloader.parse_file_page(download_page(catalogue_file.detail_url))
                     link_2_file = Datoid_downloader.get_atributes_from_file_page(download_page_content)
                     yield link_2_file
                 except ValueError as e:
-                    Datoid_downloader.logger.error(f"Error: {e}\nSoup content: {download_page_content}\nCatalogue file: {catalogue_file if catalogue_file else 'Unknown'}")
+                    Datoid_downloader.logger.error(f"Error: {e}\nCatalogue item: {videobox}\nCatalogue file: {catalogue_file if catalogue_file else 'Unknown'}")
                     
                     print_error(str(e) + " for file: " + (catalogue_file.title if catalogue_file else "Unknown"), False)
         
@@ -213,6 +251,6 @@ class Datoid_downloader(Download_page_search):
             soup = bs4.BeautifulSoup(page.text, "html.parser")
             yield from process_soup_and_yield(soup)
             next_url = find_next_url(soup)
-            if not next_url:
+            if not next_url or (limit is not None and processed >= limit):
                 break
             page = download_page(next_url)

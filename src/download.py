@@ -31,7 +31,7 @@ def download_page_js(url, timeout=30000) -> SimpleResponse:
     return SimpleResponse(content, 200)
 
 
-def download_page(url):
+def download_page(url, timeout=120):
     """
     Stáhne stránku zadaného URL a vrátí její obsah.
 
@@ -39,7 +39,7 @@ def download_page(url):
     a JavaScript-required notice (e.g. Datoid "Zapněte si prosím Javascript"),
     falls back to Playwright to render the page and returns the rendered HTML.
     """
-    response = requests.get(url)
+    response = requests.get(url, timeout=timeout)
     """
     text = response.text if response is not None else ""
 

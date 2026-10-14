@@ -33,7 +33,7 @@ class Prehrajto_downloader(Download_page_search):
         prompt = prompt.strip().replace(" ", "%20")
         return f"https://prehraj.to/hledej/{prompt}"
     
-    def search(self, prompt, file_type="all", search_type="relevance") -> 'Generator[Link_to_file, None, None]':
+    def search(self, prompt, file_type="all", search_type="relevance", limit=None) -> 'Generator[Link_to_file, None, None]':
         """
         Search for files on Datoid.cz.
         Returns a generator of Link_to_file objects.
@@ -42,11 +42,16 @@ class Prehrajto_downloader(Download_page_search):
             raise ValueError("Prompt cannot be empty.")
         url = Prehrajto_downloader.generate_search_url(prompt, file_type, search_type)
         Prehrajto_downloader.logger.info(f"Searching Prehrajto with URL: {url}")
-        response = requests.get(url)
+        response = requests.get(url, timeout=120)
         page = response.text
         if response.status_code != 200:
             raise ValueError(f"Failed to retrieve search results, status code: {response.status_code} for URL: {url}")
-        return Prehrajto_downloader.parse_catalogue(page)
+        Prehrajto_downloader.logger.info(
+            "Search response received: status=%s bytes=%s",
+            response.status_code,
+            len(response.text),
+        )
+        return Prehrajto_downloader.parse_catalogue(page, limit=limit)
     
     @staticmethod
     def is_valid_download_page(page) -> bool:
@@ -160,12 +165,17 @@ class Prehrajto_downloader(Download_page_search):
         """
         Získá informace o videu z katalogového HTML elementu (soup) a vrátí Link_to_file.
         """
-        a_tag = soup.find("a", class_="video--link")
+        a_tag = soup if getattr(soup, "name", None) == "a" else soup.find("a", class_="video--link")
         if not a_tag:
             raise ValueError("Unable to find video link in the provided HTML element.")
-        title = a_tag.get("title") or a_tag.find("h3", class_="video__title").text.strip()
+        title_tag = a_tag.find("h3", class_="video__title")
+        title = a_tag.get("title") or (title_tag.get_text(strip=True) if title_tag else "")
+        if not title:
+            raise ValueError("Video link has no title.")
         href = a_tag.get("href")
-        detail_url = f"https://prehraj.to{href}" if href and not href.startswith("http") else href
+        if not href:
+            raise ValueError("Video link has no href.")
+        detail_url = urllib.parse.urljoin(Prehrajto_downloader.webpage, href)
 
         # Najdi velikost souboru
         size_div = a_tag.find("div", class_="video__tag--size")
@@ -174,7 +184,7 @@ class Prehrajto_downloader(Download_page_search):
         return Link_to_file(title, detail_url, size, Prehrajto_downloader)
 
     @staticmethod
-    def parse_catalogue(page) -> 'Generator[Link_to_file, None, None]':
+    def parse_catalogue(page, limit=None) -> 'Generator[Link_to_file, None, None]':
         """
         Prochází stránku s výsledky vyhledávání (nový formát s <div>) a vrací informace o souborech.
         yield: Link_to_file
@@ -192,39 +202,54 @@ class Prehrajto_downloader(Download_page_search):
                 return None
             return urllib.parse.urljoin(Prehrajto_downloader.webpage, href)
         
+        processed = 0
+
         def process_soup_and_yield(soup_obj):
-            grids = soup_obj.find_all("div", class_="grid-x")
-            for grid in grids:
-                for div in grid.find_all("div", recursive=False):
-                    a_tag = div.find("a", class_="video--link")
-                    link_2_file = None
-                    if a_tag:
-                        try:
-                            link_2_file = Prehrajto_downloader.get_atributes_from_catalogue(div)
-                            detail_page = download_page(link_2_file.detail_url)
-                            if not Prehrajto_downloader.is_valid_download_page(detail_page):
-                                raise ValueError(f"Status code: {detail_page.status_code}. Invalid download page: no file to download.")
-                            link_2_file = Prehrajto_downloader.get_atributes_from_file_page(detail_page)
-                            if link_2_file:
-                                yield link_2_file
-                        except ValueError as e:
-                            print_error(f"{str(e)} for file: {(link_2_file.title if link_2_file else 'Unknown')}", False)
+            nonlocal processed
+            video_links = soup_obj.find_all("a", class_="video--link")
+            Prehrajto_downloader.logger.info(
+                "Catalogue contains %s video links",
+                len(video_links),
+            )
+            for a_tag in video_links:
+                if limit is not None and processed >= limit:
+                    return
+                processed += 1
+                link_2_file = None
+                try:
+                    link_2_file = Prehrajto_downloader.get_atributes_from_catalogue(a_tag)
+                    detail_page = download_page(link_2_file.detail_url)
+                    if not Prehrajto_downloader.is_valid_download_page(detail_page):
+                        status_code = getattr(detail_page, "status_code", "unknown")
+                        raise ValueError(
+                            f"Status code: {status_code}. Invalid download page: no file to download."
+                        )
+                    link_2_file = Prehrajto_downloader.get_atributes_from_file_page(detail_page)
+                    if link_2_file:
+                        yield link_2_file
+                except ValueError as e:
+                    Prehrajto_downloader.logger.error(
+                        "Error parsing catalogue item: %s",
+                        e,
+                    )
+                    print_error(f"{str(e)} for file: {(link_2_file.title if link_2_file else 'Unknown')}", False)
 
         soup = bs4.BeautifulSoup(page, "html.parser")
         yield from process_soup_and_yield(soup)
         
         next_url = find_next_url(soup)
-        if next_url:
+        if next_url and (limit is None or processed < limit):
             try:
-                resp = requests.get(next_url)
+                resp = requests.get(next_url, timeout=120)
                 if resp.status_code != 200:
                     print_error(f"Failed to retrieve search results, status code: {resp.status_code} for URL: {next_url}", False)
                 else:
                     #TODO: remove recursion. Use loop instead.
-                    yield from Prehrajto_downloader.parse_catalogue(resp.text)
+                    remaining = None if limit is None else limit - processed
+                    yield from Prehrajto_downloader.parse_catalogue(resp.text, limit=remaining)
             except Exception as e:
                 print_error(f"Failed to fetch next page {next_url}: {e}", False)
 
     @staticmethod
-    def get_download_link_from_detail(detail_url: str) -> str:
+    def get_download_link_from_detail(detail_url: str, timeout: float = 120) -> str:
         return f"{detail_url}?do=download"

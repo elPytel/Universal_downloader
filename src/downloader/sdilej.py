@@ -63,11 +63,11 @@ class Sdilej_downloader(Download_page_search):
         return link_2_file
     
     @staticmethod
-    def get_download_link_from_detail(detail_url: str) -> str:
+    def get_download_link_from_detail(detail_url: str, timeout: float = 120) -> str:
         """
         Získá přímý odkaz ke stažení ze stránky s detailem souboru na sdilej.cz.
         """
-        page = download_page(detail_url)
+        page = download_page(detail_url, timeout=timeout)
         soup = bs4.BeautifulSoup(page.text, "html.parser")
         # Najdi tlačítko pro stažení
         download_btn = soup.find("a", class_="btn btn-danger")

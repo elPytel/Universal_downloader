@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -103,3 +104,77 @@ def test_get_download_link(url, download_link):
 ])
 def test_search(prompt, file_type, url):
     assert Datoid_downloader.generate_search_url(prompt, file_type) == url
+
+
+def test_parse_catalogue_skips_empty_items(monkeypatch):
+    page = SimpleNamespace(
+        text="""
+        <ul class="list" id="snippet--search_files">
+            <li style="width: 100%;height: auto;"></li>
+            <li>
+                <a href="/AJSgV7/krakatit-capek-karel-epub">
+                    <span class="filename">Krakatit - Capek, Karel.epub</span>
+                    <span><i class="icon-size-white"></i>230.4 kB</span>
+                </a>
+            </li>
+        </ul>
+        """,
+    )
+
+    catalogue_file = Link_to_file(
+        "Krakatit - Capek, Karel.epub",
+        "https://datoid.cz/AJSgV7/krakatit-capek-karel-epub",
+        "230.4 kB",
+        Datoid_downloader,
+    )
+    monkeypatch.setattr(
+        Datoid_downloader,
+        "get_atributes_from_catalogue",
+        staticmethod(lambda soup: catalogue_file),
+    )
+    monkeypatch.setattr(
+        "src.downloader.datoid.download_page",
+        lambda url: SimpleNamespace(text="detail page"),
+    )
+    monkeypatch.setattr(
+        Datoid_downloader,
+        "parse_file_page",
+        staticmethod(lambda response: response),
+    )
+    monkeypatch.setattr(
+        Datoid_downloader,
+        "get_atributes_from_file_page",
+        staticmethod(lambda soup: catalogue_file),
+    )
+
+    assert list(Datoid_downloader.parse_catalogue(page)) == [catalogue_file]
+
+
+def test_get_download_links_reads_wait_and_cdn(monkeypatch):
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {
+                "download_link": "https://s25.dynet.cz/download/token",
+                "download_link_cdn": "https://s25.server2.cz/download/token",
+                "wait": 30,
+            }
+
+    class FakeSession:
+        def get(self, url, timeout):
+            assert url.endswith("?request=1")
+            return FakeResponse()
+
+    monkeypatch.setattr("src.downloader.datoid.requests.Session", lambda: FakeSession())
+
+    result = Datoid_downloader.get_download_links_from_detail(
+        "https://datoid.cz/f/example/file"
+    )
+
+    assert result.links == [
+        "https://s25.dynet.cz/download/token",
+        "https://s25.server2.cz/download/token",
+    ]
+    assert result.wait == 30
+    assert result.session is not None

@@ -106,11 +106,17 @@ options:
                         Folder to download to.
   -n NUMBER, --number NUMBER
                         Max number of files to search.
+  --source {prehrajto,datoid}
+                        Search source (default: prehrajto).
   -v, --verbose         Verbose mode.
   -D, --debug           Debug mode.
   -g, --tui             Start TUI.
   -G, --gui             Start GUI.
   -r, --remove          Remove downloaded files from the list.
+  --timeout TIMEOUT     HTTP timeout in seconds (default: 120).
+  --wait WAIT           Wait between downloads in seconds (default: 60).
+  --log-file LOG_FILE   Application log file.
+  --log-level LEVEL     Application log level.
 ```
 
 ### Vyhledání souborů
@@ -118,6 +124,12 @@ options:
 python3 main.py --search "název souboru" --file-type "audio" --search-type "smallest"
 ```
 Vyhledané soubory se uloží do souboru `files.json`. 
+
+Pro vyhledávání na Datoidu použijte:
+
+```bash
+python3 main.py --source datoid --search "Kosmo" --number 10
+```
 
 > [!tip]
 > Nyní je můžete manuálně projít a odstranit, které soubory nechcete stáhnout.
@@ -132,6 +144,24 @@ Tento příkaz projde obsah souboru `files.json` a stáhne všechny soubory, kte
 python3 main.py --download --remove
 ```
 Projde soubory a pokud se poaří soubor stáhnout, tak i odstraní jeho záznam z `files.json`.
+
+Při stahování program ve výchozím nastavení čeká 60 sekund mezi soubory, aby
+omezil riziko zablokování ze strany serveru. Timeout HTTP požadavků je ve
+výchozím nastavení 120 sekund. Průběh a chyby terminálového stahování se
+zapisují do `logs/universal_downloader.log`.
+
+Pro diagnostiku lze nastavit vlastní hodnoty:
+
+```bash
+python3 main.py --download --wait 60 --timeout 120 --log-level DEBUG
+```
+
+Parametr `--wait 0` je vhodný pouze pro lokální testování; pro běžné použití
+zachovejte výchozí čekání.
+
+Datoid může v API odpovědi určit vlastní čekání před použitím přímého odkazu
+(například `wait: 30`). Program tuto hodnotu respektuje a při neúspěšném
+prvním odkazu zkusí také CDN odkaz, pokud jej Datoid vrátí.
 
 ## Použití v GUI
 

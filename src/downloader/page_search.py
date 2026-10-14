@@ -100,7 +100,7 @@ class Download_page_search:
     def __init__(self):
         raise NotImplementedError()
     
-    def search(self, prompt, file_type="all", search_type="relevance") -> Generator["Link_to_file", None, None]:
+    def search(self, prompt, file_type="all", search_type="relevance", limit=None) -> Generator["Link_to_file", None, None]:
         """
         Search for files on the website.
         """
@@ -134,7 +134,7 @@ class Download_page_search:
         raise NotImplementedError()
     
     @staticmethod
-    def get_download_link_from_detail(detail_url: str) -> str:
+    def get_download_link_from_detail(detail_url: str, timeout: float = 120) -> str:
         """
         Get the direct download link from the detail page URL.
         """
