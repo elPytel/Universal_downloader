@@ -1,5 +1,10 @@
 SCRIPT_DIR := scripts
-DOCS_DIR := docs
+DOCS_DIR   := docs
+APT_DEPENDENCIES := apt-dependencies.txt
+PIP_DEPENDENCIES := requirements.txt
+VENV             := venv
+VENV_BIN         := $(VENV)/bin
+PYTHON           := $(shell if grep -Eq '^[[:space:]]*INSTALL_PYTHON_TO_SYSTEM[[:space:]]*=[[:space:]]*(true|TRUE|1|yes|YES)[[:space:]]*$$' .env 2>/dev/null; then printf 'python3'; else printf '%s/python' '$(VENV_BIN)'; fi)
 
 # Colors for output
 RED    := $(shell printf '\033[0;31m')
@@ -13,13 +18,13 @@ RESET  := $(shell printf '\033[0m')
 
 ALL: install-dependencies test build generate-doc
 
-install-dependencies:
+install-dependencies: $(APT_DEPENDENCIES) $(PIP_DEPENDENCIES)
 	@echo "$(GREEN)Installing dependencies...$(RESET)"
 	@./install.sh
 
 test:
 	@echo "$(GREEN)Running tests...$(RESET)"
-	@pytest
+	@$(PYTHON) -m pytest
 
 build: install-dependencies
 	@echo "$(GREEN)Building the project...$(RESET)"
@@ -31,7 +36,7 @@ generate-doc:
 
 run:
 	@echo "$(GREEN)Running the project...$(RESET)"
-	@python3 gui.py
+	@$(PYTHON) gui.py
 
 clean:
 	@echo "$(YELLOW)Cleaning build artifacts...$(RESET)"
@@ -40,3 +45,13 @@ clean:
 	rm -rf logs
 	rm ${DOCS_DIR}/* 2>/dev/null || true
 	@echo "$(GREEN)Cleaned!$(RESET)"
+
+help:
+	@echo "$(CYAN)Available targets:$(RESET)"
+	@echo "  $(BOLD)install-dependencies$(RESET) - Install all required dependencies."
+	@echo "  $(BOLD)test$(RESET) - Run the test suite."
+	@echo "  $(BOLD)build$(RESET) - Build the project."
+	@echo "  $(BOLD)generate-doc$(RESET) - Generate project documentation."
+	@echo "  $(BOLD)run$(RESET) - Run the project."
+	@echo "  $(BOLD)clean$(RESET) - Clean build artifacts and logs."
+	@echo "  $(BOLD)help$(RESET) - Show this help message."

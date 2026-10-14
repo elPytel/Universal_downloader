@@ -45,7 +45,7 @@ This application is intended for lawful, authorized use only. It is not intended
 ## Instalace závislostí
 Závislosti jsou uvedeny v souboru `requirements.txt`. Pro jejich instalaci použijte následující příkaz:
 ```bash
-pip install -r requirements.txt
+./install.sh
 ```
 
 ### Pod Linuxem
@@ -54,6 +54,24 @@ Pro instalaci stačí spustit skript `install.sh`.
 ```bash
 ./install.sh
 ```
+
+Skript ve výchozím nastavení instaluje Python závislosti do lokálního
+virtuálního prostředí `venv`, takže nezasahuje do systémové instalace Pythonu.
+Pokud chcete závislosti nainstalovat do systému, zkopírujte `.env.example` do
+`.env` a nastavte:
+
+```dotenv
+INSTALL_PYTHON_TO_SYSTEM=true
+```
+
+Tato volba je explicitní a na distribucích s ochranou PEP 668 použije
+`--break-system-packages`. Používejte ji pouze pokud instalaci do systémového
+Pythonu skutečně povolujete.
+
+Make cíle `run` a `test` automaticky použijí stejný režim: při
+`INSTALL_PYTHON_TO_SYSTEM=true` systémový `python3`, jinak `venv/bin/python`.
+Pod Linuxem je `tkinter` instalován jako systémový balíček `python3-tk`, nikoli
+přes `pip`.
 
 ## Makefile
 Pro zjednodušení některých úkonů je k dispozici `Makefile`. 
@@ -267,4 +285,3 @@ pdoc ./gui.py ./main.py ./datoid_downloader.py ./sdilej_downloader.py ./prehrajt
 ```
 
 Je nastavená github actions pro automatické generování dokumentace při pushu do mainu a její nahrání na GitHub pages [zde](https://elpytel.github.io/Universal_downloader/).
-

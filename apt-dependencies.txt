@@ -1,1 +1,2 @@
 gettext
+python3-tk
